@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Menu, Search, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import { globalSearch } from "@/lib/crm/selectors";
 import { LeadForm } from "@/components/forms/lead-form";
 import { TaskForm } from "@/components/forms/task-form";
 
-export function Topbar({ title }: { title: string }) {
+export function Topbar({ title, onOpenMobileNav }: { title: string; onOpenMobileNav?: () => void }) {
   const { state, setCurrentUserId, modalOpen, setModalOpen, currentSeller } = useCrm();
   const [q, setQ] = useState("");
   const [openHits, setOpenHits] = useState(false);
@@ -23,13 +23,27 @@ export function Topbar({ title }: { title: string }) {
   const initials = currentSeller?.name?.slice(0, 2).toUpperCase() ?? "CB";
 
   return (
-    <header className="h-16 border-b border-border bg-[#0a0a0a]/95 backdrop-blur flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20 gap-3">
-      <div className="min-w-0 shrink">
-        <h2 className="text-base lg:text-lg font-semibold truncate">{title}</h2>
+    <header className="sticky top-0 z-20 flex h-14 min-h-14 items-center justify-between gap-2 border-b border-border bg-[#0a0a0a]/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur sm:h-16 sm:min-h-16 sm:gap-3 sm:px-4 lg:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {onOpenMobileNav ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 touch-manipulation lg:hidden"
+            aria-label="Abrir menú"
+            onClick={onOpenMobileNav}
+          >
+            <Menu className="size-5" />
+          </Button>
+        ) : null}
+        <div className="min-w-0 shrink">
+          <h2 className="truncate text-base font-semibold sm:text-lg">{title}</h2>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 lg:gap-3 min-w-0 flex-1 justify-end">
-        <div className="relative hidden md:block max-w-md w-full">
+        <div className="relative hidden w-full max-w-md md:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             value={q}
@@ -73,11 +87,20 @@ export function Topbar({ title }: { title: string }) {
           </SelectContent>
         </Select>
 
-        <Button variant="outline" size="sm" className="hidden sm:inline-flex shrink-0" onClick={() => setModalOpen("lead")}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="hidden shrink-0 touch-manipulation sm:inline-flex"
+          onClick={() => setModalOpen("lead")}
+        >
           Nuevo Lead
         </Button>
-        <Button size="sm" className="bg-primary hover:bg-primary/90 text-black font-semibold shrink-0" onClick={() => setModalOpen("task")}>
-          <Sparkles className="size-4 sm:mr-1 opacity-80" />
+        <Button
+          size="sm"
+          className="min-h-9 shrink-0 touch-manipulation bg-primary px-2.5 font-semibold text-black hover:bg-primary/90 sm:px-3"
+          onClick={() => setModalOpen("task")}
+        >
+          <Sparkles className="size-4 opacity-80 sm:mr-1" />
           <span className="hidden sm:inline">Nueva Tarea</span>
         </Button>
 

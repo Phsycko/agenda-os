@@ -20,7 +20,7 @@ export function AppointmentForm({
   leads: Relation[];
   clients: Relation[];
 }) {
-  const form = useForm<z.infer<typeof appointmentSchema>>({
+  const form = useForm({
     resolver: zodResolver(appointmentSchema),
     defaultValues: {
       title: "",
@@ -53,7 +53,7 @@ export function AppointmentForm({
     <form className="grid md:grid-cols-2 gap-3" onSubmit={submit}>
       <Input placeholder="Titulo" {...form.register("title")} className="md:col-span-2" />
 
-      <Select defaultValue="DEMO" onValueChange={(v) => form.setValue("type", v as z.infer<typeof appointmentSchema>["type"])}>
+      <Select defaultValue="DEMO" onValueChange={(v) => form.setValue("type", (v ?? "DEMO") as z.infer<typeof appointmentSchema>["type"])}>
         <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="DEMO">Demo</SelectItem>
@@ -64,7 +64,7 @@ export function AppointmentForm({
         </SelectContent>
       </Select>
 
-      <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", v as z.infer<typeof appointmentSchema>["status"])}>
+      <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", (v ?? "PENDIENTE") as z.infer<typeof appointmentSchema>["status"])}>
         <SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="PENDIENTE">Pendiente</SelectItem>
@@ -78,7 +78,7 @@ export function AppointmentForm({
       <Input type="time" {...form.register("time")} />
       <Input type="number" min={15} step={15} placeholder="Duracion (min)" {...form.register("duration")} />
 
-      <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", v as z.infer<typeof appointmentSchema>["priority"])}>
+      <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", (v ?? "MEDIA") as z.infer<typeof appointmentSchema>["priority"])}>
         <SelectTrigger><SelectValue placeholder="Prioridad" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="BAJA">Baja</SelectItem>
@@ -88,7 +88,7 @@ export function AppointmentForm({
         </SelectContent>
       </Select>
 
-      <Select defaultValue="MIN_15" onValueChange={(v) => form.setValue("reminder", v as z.infer<typeof appointmentSchema>["reminder"])}>
+      <Select defaultValue="MIN_15" onValueChange={(v) => form.setValue("reminder", (v ?? "MIN_15") as z.infer<typeof appointmentSchema>["reminder"])}>
         <SelectTrigger><SelectValue placeholder="Recordatorio" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="NONE">Sin recordatorio</SelectItem>
@@ -98,7 +98,7 @@ export function AppointmentForm({
         </SelectContent>
       </Select>
 
-      <Select defaultValue="__none" onValueChange={(v) => form.setValue("leadId", v)}>
+      <Select defaultValue="__none" onValueChange={(v) => form.setValue("leadId", v ?? "__none")}>
         <SelectTrigger><SelectValue placeholder="Relacionar con lead" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">Sin lead</SelectItem>
@@ -106,7 +106,7 @@ export function AppointmentForm({
         </SelectContent>
       </Select>
 
-      <Select defaultValue="__none" onValueChange={(v) => form.setValue("clientId", v)}>
+      <Select defaultValue="__none" onValueChange={(v) => form.setValue("clientId", v ?? "__none")}>
         <SelectTrigger><SelectValue placeholder="Relacionar con cliente" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">Sin cliente</SelectItem>

@@ -109,7 +109,7 @@ export default function PersonalPage() {
         <Card className="bg-card border-border">
           <CardHeader><CardTitle>Captura rapida personal</CardTitle></CardHeader>
           <CardContent className="grid md:grid-cols-2 xl:grid-cols-6 gap-3">
-            <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}>
+            <Select value={form.type} onValueChange={(v) => setForm((f) => ({ ...f, type: v ?? f.type }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="EVENT">Agenda personal</SelectItem>
@@ -120,7 +120,7 @@ export default function PersonalPage() {
             <Input className="xl:col-span-2" placeholder="Titulo" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
             <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
             <Input type="time" value={form.time} onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))} />
-            <Select value={form.priority} onValueChange={(v) => setForm((f) => ({ ...f, priority: v }))}>
+            <Select value={form.priority} onValueChange={(v) => setForm((f) => ({ ...f, priority: v ?? f.priority }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="BAJA">Baja</SelectItem>

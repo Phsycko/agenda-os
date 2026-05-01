@@ -63,6 +63,13 @@ function weekDays(anchor: Date) {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
+type AgendaFilters = {
+  type: string;
+  status: string;
+  relation: string;
+  priority: string;
+};
+
 export default function AgendaPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [leads, setLeads] = useState<Related[]>([]);
@@ -70,9 +77,9 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [view, setView] = useState<"dia" | "semana" | "mes" | "lista">("semana");
-  const [filters, setFilters] = useState({ type: "ALL", status: "ALL", relation: "ALL", priority: "ALL" });
+  const [filters, setFilters] = useState<AgendaFilters>({ type: "ALL", status: "ALL", relation: "ALL", priority: "ALL" });
 
-  const load = async (extra?: Partial<typeof filters>) => {
+  const load = async (extra?: Partial<AgendaFilters>) => {
     const f = { ...filters, ...extra };
     const qs = new URLSearchParams();
     if (f.type !== "ALL") qs.set("type", f.type);
@@ -173,10 +180,10 @@ export default function AgendaPage() {
         </div>
 
         <div className="grid lg:grid-cols-4 gap-3">
-          <Select value={filters.type} onValueChange={(v) => load({ type: v })}><SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todos los tipos</SelectItem><SelectItem value="DEMO">Demo</SelectItem><SelectItem value="LLAMADA">Llamada</SelectItem><SelectItem value="SEGUIMIENTO">Seguimiento</SelectItem><SelectItem value="REVISION_MENSUAL">Revision mensual</SelectItem><SelectItem value="COBRO">Cobro</SelectItem></SelectContent></Select>
-          <Select value={filters.status} onValueChange={(v) => load({ status: v })}><SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todos los estados</SelectItem><SelectItem value="PENDIENTE">Pendiente</SelectItem><SelectItem value="COMPLETADA">Completada</SelectItem><SelectItem value="CANCELADA">Cancelada</SelectItem><SelectItem value="REAGENDADA">Reagendada</SelectItem></SelectContent></Select>
-          <Select value={filters.relation} onValueChange={(v) => load({ relation: v })}><SelectTrigger><SelectValue placeholder="Relacion" /></SelectTrigger><SelectContent><SelectItem value="ALL">Lead o cliente</SelectItem><SelectItem value="LEAD">Lead</SelectItem><SelectItem value="CLIENTE">Cliente</SelectItem></SelectContent></Select>
-          <Select value={filters.priority} onValueChange={(v) => load({ priority: v })}><SelectTrigger><SelectValue placeholder="Prioridad" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todas prioridades</SelectItem><SelectItem value="BAJA">Baja</SelectItem><SelectItem value="MEDIA">Media</SelectItem><SelectItem value="ALTA">Alta</SelectItem><SelectItem value="URGENTE">Urgente</SelectItem></SelectContent></Select>
+          <Select value={filters.type} onValueChange={(v) => load({ type: v ?? "ALL" })}><SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todos los tipos</SelectItem><SelectItem value="DEMO">Demo</SelectItem><SelectItem value="LLAMADA">Llamada</SelectItem><SelectItem value="SEGUIMIENTO">Seguimiento</SelectItem><SelectItem value="REVISION_MENSUAL">Revision mensual</SelectItem><SelectItem value="COBRO">Cobro</SelectItem></SelectContent></Select>
+          <Select value={filters.status} onValueChange={(v) => load({ status: v ?? "ALL" })}><SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todos los estados</SelectItem><SelectItem value="PENDIENTE">Pendiente</SelectItem><SelectItem value="COMPLETADA">Completada</SelectItem><SelectItem value="CANCELADA">Cancelada</SelectItem><SelectItem value="REAGENDADA">Reagendada</SelectItem></SelectContent></Select>
+          <Select value={filters.relation} onValueChange={(v) => load({ relation: v ?? "ALL" })}><SelectTrigger><SelectValue placeholder="Relacion" /></SelectTrigger><SelectContent><SelectItem value="ALL">Lead o cliente</SelectItem><SelectItem value="LEAD">Lead</SelectItem><SelectItem value="CLIENTE">Cliente</SelectItem></SelectContent></Select>
+          <Select value={filters.priority} onValueChange={(v) => load({ priority: v ?? "ALL" })}><SelectTrigger><SelectValue placeholder="Prioridad" /></SelectTrigger><SelectContent><SelectItem value="ALL">Todas prioridades</SelectItem><SelectItem value="BAJA">Baja</SelectItem><SelectItem value="MEDIA">Media</SelectItem><SelectItem value="ALTA">Alta</SelectItem><SelectItem value="URGENTE">Urgente</SelectItem></SelectContent></Select>
         </div>
 
         {!appointments.length ? (
@@ -196,7 +203,7 @@ export default function AgendaPage() {
         ) : (
           <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-4">
             <div>
-              <Tabs value={view} onValueChange={(v) => setView(v as typeof view)}>
+              <Tabs value={view} onValueChange={(v) => setView((v ?? "semana") as typeof view)}>
                 <TabsList>
                   <TabsTrigger value="dia">Dia</TabsTrigger>
                   <TabsTrigger value="semana">Semana</TabsTrigger>

@@ -2,7 +2,6 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { leadSchema } from "@/lib/validations";
 
 export function LeadForm({ onSaved }: { onSaved: () => void }) {
-  const form = useForm<z.infer<typeof leadSchema>>({
+  const form = useForm({
     resolver: zodResolver(leadSchema),
     defaultValues: {
       contactName: "",
@@ -49,7 +48,7 @@ export function LeadForm({ onSaved }: { onSaved: () => void }) {
       <Input placeholder="Estado" {...form.register("state")} />
       <Input type="number" placeholder="Valor estimado" {...form.register("estimatedValue")} />
 
-      <Select defaultValue="OTRO" onValueChange={(v) => form.setValue("source", v)}>
+      <Select defaultValue="OTRO" onValueChange={(v) => form.setValue("source", v ?? "OTRO")}>
         <SelectTrigger><SelectValue placeholder="Origen" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="FACEBOOK">Facebook</SelectItem>
@@ -61,7 +60,7 @@ export function LeadForm({ onSaved }: { onSaved: () => void }) {
         </SelectContent>
       </Select>
 
-      <Select defaultValue="TIBIO" onValueChange={(v) => form.setValue("temperature", v)}>
+      <Select defaultValue="TIBIO" onValueChange={(v) => form.setValue("temperature", v ?? "TIBIO")}>
         <SelectTrigger><SelectValue placeholder="Temperatura" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="FRIO">Frio</SelectItem>
@@ -70,7 +69,7 @@ export function LeadForm({ onSaved }: { onSaved: () => void }) {
         </SelectContent>
       </Select>
 
-      <Select defaultValue="NUEVO" onValueChange={(v) => form.setValue("stage", v)}>
+      <Select defaultValue="NUEVO" onValueChange={(v) => form.setValue("stage", v ?? "NUEVO")}>
         <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="NUEVO">Nuevo</SelectItem>

@@ -44,7 +44,10 @@ export const appointmentSchema = z.object({
   type: z.enum(["DEMO", "LLAMADA", "SEGUIMIENTO", "REVISION_MENSUAL", "COBRO"]),
   date: z.string(),
   time: z.string().min(1),
-  duration: z.coerce.number().int().positive(),
+  duration: z
+    .union([z.number(), z.string()])
+    .transform((v) => (typeof v === "number" ? v : Number(v)))
+    .pipe(z.number().int().positive()),
   status: z.enum(["PENDIENTE", "COMPLETADA", "CANCELADA", "REAGENDADA"]),
   priority: z.enum(["BAJA", "MEDIA", "ALTA", "URGENTE"]),
   notes: z.string().optional(),

@@ -152,7 +152,7 @@ export default function LeadsPage() {
               className="xl:col-span-2"
             />
 
-            <Select value={filters.stage} onValueChange={(v) => setFilters((prev) => ({ ...prev, stage: v }))}>
+            <Select value={filters.stage} onValueChange={(v) => setFilters((prev) => ({ ...prev, stage: v ?? "ALL" }))}>
               <SelectTrigger><SelectValue placeholder="Etapa" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas etapas</SelectItem>
@@ -160,7 +160,7 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.source} onValueChange={(v) => setFilters((prev) => ({ ...prev, source: v }))}>
+            <Select value={filters.source} onValueChange={(v) => setFilters((prev) => ({ ...prev, source: v ?? "ALL" }))}>
               <SelectTrigger><SelectValue placeholder="Origen" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos origenes</SelectItem>
@@ -173,7 +173,7 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.temp} onValueChange={(v) => setFilters((prev) => ({ ...prev, temp: v }))}>
+            <Select value={filters.temp} onValueChange={(v) => setFilters((prev) => ({ ...prev, temp: v ?? "ALL" }))}>
               <SelectTrigger><SelectValue placeholder="Temperatura" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas temperaturas</SelectItem>
@@ -183,7 +183,7 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={filters.city} onValueChange={(v) => setFilters((prev) => ({ ...prev, city: v }))}>
+            <Select value={filters.city} onValueChange={(v) => setFilters((prev) => ({ ...prev, city: v ?? "ALL" }))}>
               <SelectTrigger><SelectValue placeholder="Ciudad" /></SelectTrigger>
               <SelectContent>
                 {cities.map((city) => <SelectItem key={city} value={city}>{city === "ALL" ? "Todas ciudades" : city}</SelectItem>)}
@@ -276,7 +276,7 @@ export default function LeadsPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <Select value={selected.temperature} onValueChange={(v) => setSelected({ ...selected, temperature: v as Lead["temperature"] })}>
+                      <Select value={selected.temperature} onValueChange={(v) => setSelected({ ...selected, temperature: (v ?? selected.temperature) as Lead["temperature"] })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="FRIO">Frio</SelectItem>
@@ -285,7 +285,7 @@ export default function LeadsPage() {
                         </SelectContent>
                       </Select>
 
-                      <Select value={selected.stage} onValueChange={(v) => setSelected({ ...selected, stage: v as Lead["stage"] })}>
+                      <Select value={selected.stage} onValueChange={(v) => setSelected({ ...selected, stage: (v ?? selected.stage) as Lead["stage"] })}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {stageOrder.map((stage) => <SelectItem key={stage} value={stage}>{stage.replaceAll("_", " ")}</SelectItem>)}

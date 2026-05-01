@@ -2,7 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { createDemoState, emptyCrmState } from "@/lib/crm/defaults";
-import { saveCrmState, loadCrmState } from "@/lib/crm/storage";
+import { saveCrmState, loadCrmState, migrateCrmState } from "@/lib/crm/storage";
 import type {
   ActivityEntry,
   ContactHistoryEntry,
@@ -106,7 +106,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loaded = loadCrmState();
     if (loaded && loaded.version === 1) {
-      setState(withTaskExpiry(loaded));
+      setState(withTaskExpiry(migrateCrmState(loaded)));
     } else {
       setState(emptyCrmState());
     }
@@ -150,6 +150,7 @@ export function CrmProvider({ children }: { children: React.ReactNode }) {
         phone: input.phone ?? "",
         email: input.email ?? null,
         city: input.city ?? "",
+        sector: input.sector ?? null,
         service: input.service ?? "",
         source: input.source ?? "OTRO",
         stage: input.stage ?? "NUEVO",

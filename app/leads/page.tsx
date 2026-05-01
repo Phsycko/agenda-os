@@ -17,7 +17,17 @@ import { AppointmentForm } from "@/components/forms/appointment-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCrm } from "@/components/providers/crm-provider";
 import { filterLeadsForUser, isReadOnly } from "@/lib/crm/permissions";
-import { LEAD_SOURCES, LEAD_STAGES, PRIORITIES, type LeadSource, type LeadStage, type Priority } from "@/lib/crm/types";
+import {
+  LEAD_SECTORS,
+  LEAD_SECTOR_LABELS,
+  LEAD_SOURCES,
+  LEAD_STAGES,
+  PRIORITIES,
+  type LeadSector,
+  type LeadSource,
+  type LeadStage,
+  type Priority,
+} from "@/lib/crm/types";
 
 const stageOrder = LEAD_STAGES;
 
@@ -47,15 +57,23 @@ export default function LeadsPage() {
   const [query, setQuery] = useState("");
   const [noteDraft, setNoteDraft] = useState("");
   const [contactDraft, setContactDraft] = useState({ channel: "WHATSAPP", note: "" });
-  const [filters, setFilters] = useState({ stage: "ALL", source: "ALL", priority: "ALL", seller: "ALL", dateFrom: "" });
+  const [filters, setFilters] = useState({
+    stage: "ALL",
+    source: "ALL",
+    priority: "ALL",
+    seller: "ALL",
+    sector: "ALL",
+    dateFrom: "",
+  });
 
   const sellers = state.sellers.filter((s) => s.role === "VENDEDOR" || s.role === "ADMIN");
 
   const filtered = useMemo(() => {
     return leads.filter((lead) => {
       const seller = lead.assignedSellerId ? state.sellers.find((s) => s.id === lead.assignedSellerId)?.name ?? "" : "";
+      const sectorLabel = lead.sector ? LEAD_SECTOR_LABELS[lead.sector] : "";
       const text =
-        `${lead.contactName} ${lead.businessName} ${lead.phone} ${lead.email ?? ""} ${lead.city} ${lead.service} ${seller}`.toLowerCase();
+        `${lead.contactName} ${lead.businessName} ${lead.phone} ${lead.email ?? ""} ${lead.city} ${lead.service} ${sectorLabel} ${seller}`.toLowerCase();
       const matchQuery = text.includes(query.toLowerCase());
       const matchStage = filters.stage === "ALL" || lead.stage === filters.stage;
       const matchSource = filters.source === "ALL" || lead.source === filters.source;
@@ -63,9 +81,12 @@ export default function LeadsPage() {
       const matchSeller =
         filters.seller === "ALL" ||
         (filters.seller === "__unassigned" ? !lead.assignedSellerId : lead.assignedSellerId === filters.seller);
+      const matchSector =
+        filters.sector === "ALL" ||
+        (filters.sector === "__none" ? !lead.sector : lead.sector === (filters.sector as LeadSector));
       const matchDate =
         !filters.dateFrom || !lead.createdAt || parseISO(lead.createdAt) >= parseISO(filters.dateFrom + "T00:00:00");
-      return matchQuery && matchStage && matchSource && matchPri && matchSeller && matchDate;
+      return matchQuery && matchStage && matchSource && matchPri && matchSeller && matchSector && matchDate;
     });
   }, [leads, query, filters, state.sellers]);
 
@@ -111,9 +132,9 @@ export default function LeadsPage() {
         </div>
 
         <Card className="bg-card border-border">
-          <CardContent className="pt-5 grid md:grid-cols-2 xl:grid-cols-6 gap-3">
+          <CardContent className="pt-5 grid md:grid-cols-2 xl:grid-cols-7 gap-3">
             <Input
-              placeholder="Buscar: nombre, negocio, teléfono, ciudad, servicio, fuente o vendedor"
+              placeholder="Buscar: nombre, negocio, teléfono, ciudad, servicio, sector, fuente o vendedor"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="xl:col-span-2"
@@ -171,6 +192,20 @@ export default function LeadsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <Select value={filters.sector} onValueChange={(v) => setFilters((p) => ({ ...p, sector: v ?? "ALL" }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sector" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Todos los sectores</SelectItem>
+                <SelectItem value="__none">Sin sector</SelectItem>
+                {LEAD_SECTORS.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {LEAD_SECTOR_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Input type="date" value={filters.dateFrom} onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))} />
           </CardContent>
         </Card>
@@ -211,6 +246,12 @@ export default function LeadsPage() {
                         <span>{lead.source}</span>
                         <span>•</span>
                         <span>{lead.service}</span>
+                        {lead.sector ? (
+                          <>
+                            <span>•</span>
+                            <span>{LEAD_SECTOR_LABELS[lead.sector]}</span>
+                          </>
+                        ) : null}
                         <span>•</span>
                         <span>{lead.estimatedValue ? `$${lead.estimatedValue}` : "Sin valor"}</span>
                       </div>
@@ -251,6 +292,7 @@ export default function LeadsPage() {
                       {selected.contactName} · {selected.phone}
                     </p>
                     <p>Etapa: {selected.stage.replaceAll("_", " ")}</p>
+                    {selected.sector ? <p>Sector: {LEAD_SECTOR_LABELS[selected.sector]}</p> : null}
                     <p className="text-xs pt-2">Vista solo lectura (rol Viewer).</p>
                   </div>
                 ) : (
@@ -274,6 +316,24 @@ export default function LeadsPage() {
                     <Input value={selected.service} onChange={(e) => updateLead(selected.id, { service: e.target.value })} placeholder="Servicio" />
                     <div className="grid grid-cols-2 gap-2">
                       <Input value={selected.city} onChange={(e) => updateLead(selected.id, { city: e.target.value })} placeholder="Ciudad" />
+                      <Select
+                        value={selected.sector ?? "__none"}
+                        onValueChange={(v) =>
+                          updateLead(selected.id, { sector: v === "__none" ? null : (v as LeadSector) })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sector" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">Sin especificar</SelectItem>
+                          {LEAD_SECTORS.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {LEAD_SECTOR_LABELS[s]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <Select

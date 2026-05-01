@@ -1,13 +1,23 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrm } from "@/components/providers/crm-provider";
-import { LEAD_SOURCES, LEAD_STAGES, PRIORITIES, type LeadSource, type LeadStage, type Priority } from "@/lib/crm/types";
+import {
+  LEAD_SECTORS,
+  LEAD_SECTOR_LABELS,
+  LEAD_SOURCES,
+  LEAD_STAGES,
+  PRIORITIES,
+  type LeadSector,
+  type LeadSource,
+  type LeadStage,
+  type Priority,
+} from "@/lib/crm/types";
 import { leadSchema } from "@/lib/validations";
 
 export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?: () => void }) {
@@ -22,6 +32,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
       service: "",
       city: "",
       state: "",
+      sector: "",
       source: "OTRO" as string,
       priority: "MEDIA" as string,
       stage: "NUEVO" as string,
@@ -34,7 +45,14 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
     },
   });
 
+  const [source, priority, stage, assignedSellerId, sector] = useWatch({
+    control: form.control,
+    name: ["source", "priority", "stage", "assignedSellerId", "sector"],
+  });
+
   const onSubmit = form.handleSubmit((values) => {
+    const sectorVal =
+      values.sector && (LEAD_SECTORS as readonly string[]).includes(values.sector) ? (values.sector as LeadSector) : null;
     createLead({
       contactName: values.contactName?.trim() || "",
       businessName: values.businessName?.trim() || "",
@@ -42,6 +60,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
       email: values.email || null,
       service: values.service?.trim() || "",
       city: values.city?.trim() || "",
+      sector: sectorVal,
       source: (values.source as LeadSource) || "OTRO",
       stage: (values.stage as LeadStage) || "NUEVO",
       priority: (values.priority as Priority) || "MEDIA",
@@ -69,7 +88,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
       <Input placeholder="Estado / región" {...form.register("state")} />
       <Input type="number" placeholder="Valor estimado" {...form.register("estimatedValue")} />
 
-      <Select defaultValue="OTRO" onValueChange={(v) => form.setValue("source", v ?? "OTRO")}>
+      <Select value={source || "OTRO"} onValueChange={(v) => form.setValue("source", v ?? "OTRO")}>
         <SelectTrigger>
           <SelectValue placeholder="Fuente" />
         </SelectTrigger>
@@ -82,7 +101,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
         </SelectContent>
       </Select>
 
-      <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", v ?? "MEDIA")}>
+      <Select value={priority || "MEDIA"} onValueChange={(v) => form.setValue("priority", v ?? "MEDIA")}>
         <SelectTrigger>
           <SelectValue placeholder="Prioridad" />
         </SelectTrigger>
@@ -95,7 +114,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
         </SelectContent>
       </Select>
 
-      <Select defaultValue="NUEVO" onValueChange={(v) => form.setValue("stage", v ?? "NUEVO")}>
+      <Select value={stage || "NUEVO"} onValueChange={(v) => form.setValue("stage", v ?? "NUEVO")}>
         <SelectTrigger>
           <SelectValue placeholder="Etapa" />
         </SelectTrigger>
@@ -108,7 +127,10 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
         </SelectContent>
       </Select>
 
-      <Select defaultValue="__none" onValueChange={(v) => form.setValue("assignedSellerId", v === "__none" ? "" : (v ?? ""))}>
+      <Select
+        value={assignedSellerId?.trim() ? assignedSellerId : "__none"}
+        onValueChange={(v) => form.setValue("assignedSellerId", v === "__none" ? "" : (v ?? ""))}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Vendedor asignado" />
         </SelectTrigger>
@@ -121,6 +143,25 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
           ))}
         </SelectContent>
       </Select>
+
+      <div className="md:col-span-2">
+        <Select
+          value={sector && (LEAD_SECTORS as readonly string[]).includes(sector) ? sector : "__none"}
+          onValueChange={(v) => form.setValue("sector", v === "__none" ? "" : (v ?? ""))}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Sector / giro del negocio" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none">Sin especificar</SelectItem>
+            {LEAD_SECTORS.map((s) => (
+              <SelectItem key={s} value={s}>
+                {LEAD_SECTOR_LABELS[s]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Input type="date" placeholder="Último contacto" {...form.register("lastContactAt")} />
       <Input type="date" placeholder="Próximo seguimiento" {...form.register("nextFollowUpAt")} />

@@ -25,6 +25,30 @@ export const LEAD_SOURCES = [
 ] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
+/** Sector / giro del negocio del lead */
+export const LEAD_SECTORS = [
+  "LANDSCAPE",
+  "ELECTRICIDAD",
+  "PLOMERIA",
+  "LIMPIEZA",
+  "ROOFING",
+  "CONSTRUCCION",
+  "SOLDADURA",
+  "OTRO",
+] as const;
+export type LeadSector = (typeof LEAD_SECTORS)[number];
+
+export const LEAD_SECTOR_LABELS: Record<LeadSector, string> = {
+  LANDSCAPE: "Landscape",
+  ELECTRICIDAD: "Electricidad",
+  PLOMERIA: "Plomería",
+  LIMPIEZA: "Limpieza",
+  ROOFING: "Roofero / roofing",
+  CONSTRUCCION: "Construcción",
+  SOLDADURA: "Soldadura",
+  OTRO: "Otro sector",
+};
+
 export const PRIORITIES = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
@@ -95,6 +119,8 @@ export type CrmLead = {
   phone: string;
   email: string | null;
   city: string;
+  /** Giro o sector del negocio (dropdown) */
+  sector: LeadSector | null;
   service: string;
   source: LeadSource;
   stage: LeadStage;

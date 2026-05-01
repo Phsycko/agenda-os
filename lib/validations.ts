@@ -20,6 +20,7 @@ export const leadSchema = z
     lastContactAt: z.string().optional(),
     nextFollowUpAt: z.string().optional(),
     assignedSellerId: z.string().optional(),
+    sector: z.string().optional(),
     nextAction: z.string().optional(),
     lossReason: z.string().optional(),
   })

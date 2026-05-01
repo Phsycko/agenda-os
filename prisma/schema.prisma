@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadSource {
+  FACEBOOK
+  INSTAGRAM
+  GOOGLE_MAPS
+  REFERIDO
+  WEB
+  OTRO
+}
+
+enum LeadTemperature {
+  FRIO
+  TIBIO
+  CALIENTE
+}
+
+enum LeadStage {
+  NUEVO
+  CONTACTADO
+  INTERESADO
+  DEMO_AGENDADA
+  DEMO_REALIZADA
+  PROPUESTA_ENVIADA
+  CERRADO_GANADO
+  CERRADO_PERDIDO
+}
+
+enum ClientStatus {
+  ACTIVO
+  PAUSADO
+  CANCELADO
+}
+
+enum AppointmentType {
+  DEMO
+  LLAMADA
+  SEGUIMIENTO
+  REVISION_MENSUAL
+  COBRO
+}
+
+enum AppointmentStatus {
+  PENDIENTE
+  COMPLETADA
+  CANCELADA
+  REAGENDADA
+}
+
+enum AppointmentPriority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum AppointmentReminder {
+  NONE
+  MIN_15
+  HOUR_1
+  DAY_1
+}
+
+enum TaskStatus {
+  PENDIENTE
+  EN_PROGRESO
+  COMPLETADA
+}
+
+enum TaskPriority {
+  BAJA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lead {
+  id             String          @id @default(cuid())
+  contactName    String
+  businessName   String
+  phone          String
+  email          String?
+  service        String
+  city           String
+  state          String
+  source         LeadSource
+  temperature    LeadTemperature
+  stage          LeadStage       @default(NUEVO)
+  estimatedValue Float?
+  notes          String?
+  lastContactAt  DateTime?
+  nextFollowUpAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  appointments Appointment[]
+  tasks        Task[]
+  notesList    Note[]
+  messages     MessageLog[]
+}
+
+model Client {
+  id                String   @id @default(cuid())
+  businessName      String
+  contactName       String
+  phone             String
+  email             String?
+  service           String
+  city              String
+  state             String
+  plan              String
+  setupFee          Float
+  monthlyFee        Float
+  status            ClientStatus @default(ACTIVO)
+  startDate         DateTime
+  domain            String?
+  websiteUrl        String?
+  googleBusinessUrl String?
+  internalNotes     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  appointments Appointment[]
+  tasks        Task[]
+  notesList    Note[]
+  messages     MessageLog[]
+  transactions FinanceTransaction[]
+  progress     ClientProgress[]
+}
+
+model Appointment {
+  id          String              @id @default(cuid())
+  title       String
+  type        AppointmentType
+  date        DateTime
+  time        String
+  duration    Int                 @default(30)
+  status      AppointmentStatus   @default(PENDIENTE)
+  priority    AppointmentPriority @default(MEDIA)
+  notes       String?
+  nextAction  String?
+  reminder    AppointmentReminder @default(NONE)
+  meetingLink String?
+  location    String?
+  leadId      String?
+  clientId    String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
+
+model Task {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus   @default(PENDIENTE)
+  priority    TaskPriority @default(MEDIA)
+  dueDate     DateTime?
+  leadId      String?
+  clientId    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
+
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  category  String
+  niche     String?
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MessageLog {
+  id        String   @id @default(cuid())
+  channel   String
+  content   String
+  status    String
+  leadId    String?
+  clientId  String?
+  createdAt DateTime @default(now())
+
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
+
+model FinanceTransaction {
+  id        String          @id @default(cuid())
+  type      TransactionType
+  category  String
+  amount    Float
+  concept   String
+  date      DateTime
+  clientId  String?
+  notes     String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
+
+model ClientProgress {
+  id        String   @id @default(cuid())
+  clientId  String
+  month     Int
+  year      Int
+  calls     Int      @default(0)
+  messages  Int      @default(0)
+  leads     Int      @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, month, year])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  content   String
+  leadId    String?
+  clientId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lead   Lead?   @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  client Client? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  action      String
+  entityType  String
+  entityId    String
+  description String
+  createdAt   DateTime @default(now())
+}

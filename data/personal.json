@@ -1,0 +1,15 @@
+[
+  {
+    "id": "personal-seed-2",
+    "type": "NOTE",
+    "title": "Idea personal",
+    "content": "Bloquear 90 minutos diarios para deep work sin reuniones.",
+    "status": "PENDIENTE",
+    "priority": "ALTA",
+    "tags": [
+      "productividad"
+    ],
+    "createdAt": "2026-04-29T10:00:00.000Z",
+    "updatedAt": "2026-04-29T10:00:00.000Z"
+  }
+]

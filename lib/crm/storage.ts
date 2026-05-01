@@ -1,4 +1,4 @@
-import type { CrmLead, CrmState } from "./types";
+import type { CrmClient, CrmLead, CrmState } from "./types";
 import { STORAGE_KEY } from "./types";
 import { coerceStoredLeadNiche } from "./lead-niches";
 
@@ -9,6 +9,10 @@ export function migrateCrmState(state: CrmState): CrmState {
     leads: state.leads.map((l) => ({
       ...(l as CrmLead),
       sector: coerceStoredLeadNiche((l as Partial<CrmLead>).sector),
+    })),
+    clients: state.clients.map((c) => ({
+      ...(c as CrmClient),
+      sector: coerceStoredLeadNiche((c as Partial<CrmClient>).sector),
     })),
   };
 }

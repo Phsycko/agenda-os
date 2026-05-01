@@ -35,6 +35,7 @@ export const crmClientFormSchema = z.object({
   phone: z.string().min(1, "Requerido"),
   email: z.string().email("Email invalido").optional().or(z.literal("")),
   city: z.string().min(1, "Requerido"),
+  sector: z.string().optional().nullable(),
   serviceContracted: z.string().min(1, "Requerido"),
   monthlyFee: z.coerce.number().nonnegative(),
   initialPayment: z.coerce.number().nonnegative(),

@@ -13,9 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { LeadNichePicker } from "@/components/forms/lead-niche-picker";
 import { useCrm } from "@/components/providers/crm-provider";
 import { isReadOnly } from "@/lib/crm/permissions";
-import type { ClientStatus, CrmClient } from "@/lib/crm/types";
+import { CLIENT_STATUS_LABELS, leadNicheLabel, type ClientStatus, type CrmClient } from "@/lib/crm/types";
 
 export default function ClientsPage() {
   const { state, currentSeller, updateClient, deleteClient, addClientMovement, addMonthlyPayment } = useCrm();
@@ -26,7 +28,11 @@ export default function ClientsPage() {
 
   const filtered = useMemo(() => {
     const t = q.toLowerCase();
-    return state.clients.filter((c) => `${c.businessName} ${c.contactName} ${c.phone} ${c.city}`.toLowerCase().includes(t));
+    return state.clients.filter((c) =>
+      `${c.businessName} ${c.contactName} ${c.phone} ${c.city} ${c.sector ? leadNicheLabel(c.sector) : ""}`
+        .toLowerCase()
+        .includes(t),
+    );
   }, [state.clients, q]);
 
   const [movNote, setMovNote] = useState("");
@@ -45,7 +51,7 @@ export default function ClientsPage() {
               <DialogTrigger className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-black hover:bg-primary/90">
                 Crear cliente
               </DialogTrigger>
-              <DialogContent className="max-w-2xl bg-card border-border">
+              <DialogContent className="max-w-3xl bg-card border-border">
                 <DialogHeader>
                   <DialogTitle>Nuevo cliente</DialogTitle>
                 </DialogHeader>
@@ -60,7 +66,7 @@ export default function ClientsPage() {
         {!filtered.length ? (
           <EmptyState title="Sin clientes" description="Convierte un lead ganado o crea un cliente manualmente." />
         ) : (
-          <div className="grid xl:grid-cols-[1fr_380px] gap-4">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_min(28rem,calc(100vw-2rem))]">
             <Card className="bg-card border-border">
               <CardContent className="p-0">
                 <div className="grid grid-cols-12 border-b border-border px-4 py-2 text-xs uppercase tracking-wide text-muted-foreground">
@@ -78,7 +84,7 @@ export default function ClientsPage() {
                   >
                     <span className="col-span-4 font-medium truncate">{c.businessName}</span>
                     <span className="col-span-2">
-                      <Badge variant="outline">{c.status}</Badge>
+                      <Badge variant="outline">{CLIENT_STATUS_LABELS[c.status]}</Badge>
                     </span>
                     <span className="col-span-3">${c.monthlyFee}</span>
                     <span className="col-span-3 text-muted-foreground">{c.startDate}</span>
@@ -88,14 +94,22 @@ export default function ClientsPage() {
             </Card>
 
             <Card className="bg-card border-border xl:sticky xl:top-20 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <CardHeader>
-                <CardTitle className="text-base">Detalle</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Detalle del cliente</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4 px-4 pb-5 sm:px-5">
                 {!selected ? (
                   <p className="text-sm text-muted-foreground">Selecciona un cliente.</p>
                 ) : readOnly ? (
-                  <p className="text-sm text-muted-foreground">Solo lectura.</p>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p className="font-semibold text-zinc-200">{selected.businessName}</p>
+                    <p>
+                      {selected.contactName} · {selected.phone}
+                    </p>
+                    <p>Estado: {CLIENT_STATUS_LABELS[selected.status]}</p>
+                    {selected.sector ? <p>Nicho: {leadNicheLabel(selected.sector)}</p> : null}
+                    <p className="text-xs pt-2">Solo lectura.</p>
+                  </div>
                 ) : (
                   <>
                     <ClientDetailEditor
@@ -175,41 +189,143 @@ function ClientDetailEditor({
   sellers: { id: string; name: string }[];
 }) {
   return (
-    <div className="space-y-2">
-      <Input value={client.businessName} onChange={(e) => onPatch({ businessName: e.target.value })} />
-      <Input value={client.contactName} onChange={(e) => onPatch({ contactName: e.target.value })} />
-      <Input value={client.phone} onChange={(e) => onPatch({ phone: e.target.value })} />
-      <Input value={client.email ?? ""} onChange={(e) => onPatch({ email: e.target.value || null })} />
-      <Input value={client.city} onChange={(e) => onPatch({ city: e.target.value })} />
-      <Input value={client.serviceContracted} onChange={(e) => onPatch({ serviceContracted: e.target.value })} />
-      <Input type="number" value={client.monthlyFee} onChange={(e) => onPatch({ monthlyFee: Number(e.target.value) })} />
-      <Input type="number" value={client.initialPayment} onChange={(e) => onPatch({ initialPayment: Number(e.target.value) })} />
-      <Input type="date" value={client.startDate.slice(0, 10)} onChange={(e) => onPatch({ startDate: e.target.value })} />
-      <Select value={client.status} onValueChange={(v) => onPatch({ status: (v ?? client.status) as ClientStatus })}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="ACTIVO">Activo</SelectItem>
-          <SelectItem value="PAUSADO">Pausado</SelectItem>
-          <SelectItem value="CANCELADO">Cancelado</SelectItem>
-          <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-        </SelectContent>
-      </Select>
-      <Select value={client.sellerId ?? "__none"} onValueChange={(v) => onPatch({ sellerId: v === "__none" ? null : v })}>
-        <SelectTrigger>
-          <SelectValue placeholder="Vendedor" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none">Sin asignar</SelectItem>
-          {sellers.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {s.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Textarea value={client.notes ?? ""} onChange={(e) => onPatch({ notes: e.target.value })} placeholder="Notas" />
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Negocio y contacto</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Nombre del negocio</Label>
+            <Input
+              className="h-9"
+              value={client.businessName}
+              onChange={(e) => onPatch({ businessName: e.target.value })}
+              placeholder="Negocio"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Contacto</Label>
+            <Input
+              className="h-9"
+              value={client.contactName}
+              onChange={(e) => onPatch({ contactName: e.target.value })}
+              placeholder="Nombre"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Teléfono</Label>
+            <Input className="h-9" value={client.phone} onChange={(e) => onPatch({ phone: e.target.value })} placeholder="Teléfono" />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Email</Label>
+            <Input
+              className="h-9"
+              value={client.email ?? ""}
+              onChange={(e) => onPatch({ email: e.target.value || null })}
+              placeholder="Email"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Ciudad</Label>
+            <Input className="h-9" value={client.city} onChange={(e) => onPatch({ city: e.target.value })} placeholder="Ciudad" />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Giro / nicho</Label>
+            <LeadNichePicker value={client.sector} onChange={(next) => onPatch({ sector: next })} />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Contrato</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Servicio contratado</Label>
+            <Input
+              className="h-9"
+              value={client.serviceContracted}
+              onChange={(e) => onPatch({ serviceContracted: e.target.value })}
+              placeholder="Servicio"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Mensualidad (USD)</Label>
+            <Input
+              className="h-9"
+              type="number"
+              value={client.monthlyFee}
+              onChange={(e) => onPatch({ monthlyFee: Number(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Pago inicial (USD)</Label>
+            <Input
+              className="h-9"
+              type="number"
+              value={client.initialPayment}
+              onChange={(e) => onPatch({ initialPayment: Number(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Inicio de contrato</Label>
+            <Input
+              className="h-9"
+              type="date"
+              value={client.startDate.slice(0, 10)}
+              onChange={(e) => onPatch({ startDate: e.target.value })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">Estado</Label>
+            <Select value={client.status} onValueChange={(v) => onPatch({ status: (v ?? client.status) as ClientStatus })}>
+              <SelectTrigger className="h-9 w-full min-w-0">
+                <SelectValue>
+                  {(v) => (v ? CLIENT_STATUS_LABELS[v as ClientStatus] ?? String(v) : "")}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {(["ACTIVO", "PAUSADO", "CANCELADO", "PENDIENTE"] as const).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {CLIENT_STATUS_LABELS[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <Label className="text-xs text-muted-foreground">Vendedor responsable</Label>
+            <Select
+              value={client.sellerId ?? "__none"}
+              onValueChange={(v) => onPatch({ sellerId: v === "__none" ? null : v })}
+            >
+              <SelectTrigger className="h-9 w-full min-w-0">
+                <SelectValue placeholder="Sin asignar">
+                  {(v) =>
+                    !v || v === "__none" ? "Sin asignar" : sellers.find((s) => s.id === v)?.name ?? "Sin asignar"
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Sin asignar</SelectItem>
+                {sellers.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+        <Label className="text-xs text-muted-foreground">Notas</Label>
+        <Textarea
+          className="mt-2 min-h-[100px] resize-y"
+          value={client.notes ?? ""}
+          onChange={(e) => onPatch({ notes: e.target.value })}
+          placeholder="Notas internas del cliente…"
+        />
+      </div>
     </div>
   );
 }

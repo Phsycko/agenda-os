@@ -157,7 +157,8 @@ export function globalSearch(state: CrmState, q: string, limit = 20): GlobalSear
     if (hay.includes(query)) out.push({ kind: "lead", id: l.id, label: l.businessName, sub: l.contactName, href: "/leads" });
   }
   for (const c of state.clients) {
-    const hay = `${c.businessName} ${c.contactName} ${c.phone} ${c.email ?? ""} ${c.city}`.toLowerCase();
+    const sectorText = c.sector ? leadNicheLabel(c.sector) : "";
+    const hay = `${c.businessName} ${c.contactName} ${c.phone} ${c.email ?? ""} ${c.city} ${sectorText}`.toLowerCase();
     if (hay.includes(query)) out.push({ kind: "client", id: c.id, label: c.businessName, sub: c.contactName, href: "/clients" });
   }
   for (const t of tasks) {

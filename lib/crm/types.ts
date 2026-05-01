@@ -72,6 +72,13 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 export const CLIENT_STATUSES = ["ACTIVO", "PAUSADO", "CANCELADO", "PENDIENTE"] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 
+export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
+  ACTIVO: "Activo",
+  PAUSADO: "Pausado",
+  CANCELADO: "Cancelado",
+  PENDIENTE: "Pendiente",
+};
+
 export const APPOINTMENT_TYPES = [
   "DEMO",
   "LLAMADA",
@@ -177,6 +184,8 @@ export type CrmClient = {
   phone: string;
   email: string | null;
   city: string;
+  /** Giro / nicho (mismo catálogo que leads) */
+  sector: string | null;
   serviceContracted: string;
   monthlyFee: number;
   initialPayment: number;

@@ -17,6 +17,19 @@ export async function POST(req: Request) {
   const data = parsed.data;
   const contactName = data.contactName?.trim() || data.businessName?.trim() || "Sin nombre";
   const businessName = data.businessName?.trim() || data.contactName?.trim() || "Prospecto sin negocio";
+  const src = (data.source ?? "OTRO").toUpperCase();
+  const prismaSource =
+    src === "FACEBOOK" || src === "INSTAGRAM" || src === "REFERIDO" || src === "WEB" || src === "OTRO"
+      ? src
+      : src === "GOOGLE_MAPS"
+        ? "GOOGLE_MAPS"
+        : "OTRO";
+  const tempFromPriority = (): "FRIO" | "TIBIO" | "CALIENTE" => {
+    const p = (data.priority ?? data.temperature ?? "").toString().toUpperCase();
+    if (p === "URGENTE" || p === "ALTA" || p === "CALIENTE") return "CALIENTE";
+    if (p === "MEDIA" || p === "TIBIO") return "TIBIO";
+    return (data.temperature as "FRIO" | "TIBIO" | "CALIENTE") || "FRIO";
+  };
   const normalizedData = {
     contactName,
     businessName,
@@ -25,14 +38,8 @@ export async function POST(req: Request) {
     service: data.service?.trim() || "Pendiente definir",
     city: data.city?.trim() || "Sin ciudad",
     state: data.state?.trim() || "N/A",
-    source: (data.source as
-      | "FACEBOOK"
-      | "INSTAGRAM"
-      | "GOOGLE_MAPS"
-      | "REFERIDO"
-      | "WEB"
-      | "OTRO") ?? "OTRO",
-    temperature: (data.temperature as "FRIO" | "TIBIO" | "CALIENTE") ?? "FRIO",
+    source: prismaSource as "FACEBOOK" | "INSTAGRAM" | "GOOGLE_MAPS" | "REFERIDO" | "WEB" | "OTRO",
+    temperature: tempFromPriority(),
     stage: (data.stage as
       | "NUEVO"
       | "CONTACTADO"

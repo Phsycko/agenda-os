@@ -1,4 +1,6 @@
 "use client";
+
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { taskSchema } from "@/lib/validations";
@@ -6,16 +8,130 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useCrm } from "@/components/providers/crm-provider";
+import { PRIORITIES, TASK_STATUSES, type Priority, type TaskStatus } from "@/lib/crm/types";
 
-export function TaskForm({ onSaved }: { onSaved: () => void }) {
-  const form = useForm({ resolver: zodResolver(taskSchema), defaultValues: { title: "", description: "", status: "PENDIENTE", priority: "MEDIA" } });
-  return <form className="grid gap-3" onSubmit={form.handleSubmit(async (v)=>{ await fetch('/api/tasks',{method:'POST', body: JSON.stringify(v)}); onSaved(); form.reset();})}>
-    <Input placeholder="Titulo" {...form.register("title")} />
-    <Textarea placeholder="Descripcion" {...form.register("description")} />
-    <div className="grid grid-cols-2 gap-3">
-      <Select defaultValue="PENDIENTE" onValueChange={(v)=>form.setValue("status", v ?? "PENDIENTE")}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="PENDIENTE">Pendiente</SelectItem><SelectItem value="EN_PROGRESO">En progreso</SelectItem><SelectItem value="COMPLETADA">Completada</SelectItem></SelectContent></Select>
-      <Select defaultValue="MEDIA" onValueChange={(v)=>form.setValue("priority", v ?? "MEDIA")}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="BAJA">Baja</SelectItem><SelectItem value="MEDIA">Media</SelectItem><SelectItem value="ALTA">Alta</SelectItem><SelectItem value="URGENTE">Urgente</SelectItem></SelectContent></Select>
-    </div>
-    <Button type="submit" className="bg-primary text-black">Guardar tarea</Button>
-  </form>
+export function TaskForm({
+  onSaved,
+  onClose,
+  initialLeadId,
+}: {
+  onSaved?: () => void;
+  onClose?: () => void;
+  initialLeadId?: string | null;
+}) {
+  const { createTask, state, setModalOpen } = useCrm();
+  const form = useForm({
+    resolver: zodResolver(taskSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      status: "PENDIENTE",
+      priority: "MEDIA",
+      dueDate: "",
+      leadId: "",
+      clientId: "",
+      sellerId: "",
+    },
+  });
+
+  useEffect(() => {
+    if (!initialLeadId) return;
+    form.setValue("leadId", initialLeadId);
+    form.setValue("title", "Seguimiento de lead");
+  }, [initialLeadId, form]);
+
+  return (
+    <form
+      className="grid gap-3"
+      onSubmit={form.handleSubmit((v) => {
+        createTask({
+          title: v.title,
+          description: v.description || null,
+          status: (v.status as TaskStatus) || "PENDIENTE",
+          priority: (v.priority as Priority) || "MEDIA",
+          dueDate: v.dueDate ? new Date(v.dueDate).toISOString() : null,
+          leadId: v.leadId || null,
+          clientId: v.clientId || null,
+          sellerId: v.sellerId || null,
+        });
+        form.reset();
+        onSaved?.();
+        onClose?.();
+        setModalOpen(null);
+      })}
+    >
+      <Input placeholder="Título" {...form.register("title")} />
+      <Textarea placeholder="Descripción" {...form.register("description")} />
+      <div className="grid grid-cols-2 gap-3">
+        <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", v ?? "PENDIENTE")}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TASK_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {s.replaceAll("_", " ")}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", v ?? "MEDIA")}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PRIORITIES.map((p) => (
+              <SelectItem key={p} value={p}>
+                {p}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <Input type="date" {...form.register("dueDate")} />
+      <Select defaultValue="" onValueChange={(v) => form.setValue("sellerId", v === "__none" ? "" : (v ?? ""))}>
+        <SelectTrigger>
+          <SelectValue placeholder="Vendedor" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none">Sin asignar</SelectItem>
+          {state.sellers.filter((s) => s.active && (s.role === "VENDEDOR" || s.role === "ADMIN")).map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select defaultValue="" onValueChange={(v) => form.setValue("leadId", v === "__none" ? "" : (v ?? ""))}>
+        <SelectTrigger>
+          <SelectValue placeholder="Relacionar lead" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none">Sin lead</SelectItem>
+          {state.leads.map((l) => (
+            <SelectItem key={l.id} value={l.id}>
+              {l.businessName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select defaultValue="" onValueChange={(v) => form.setValue("clientId", v === "__none" ? "" : (v ?? ""))}>
+        <SelectTrigger>
+          <SelectValue placeholder="Relacionar cliente" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none">Sin cliente</SelectItem>
+          {state.clients.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.businessName}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button type="submit" className="bg-primary text-black">
+        Guardar tarea
+      </Button>
+    </form>
+  );
 }

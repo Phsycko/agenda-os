@@ -1,13 +1,15 @@
 "use client";
 
+import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { appointmentSchema } from "@/lib/validations";
+import { appointmentCrmSchema } from "@/lib/validations";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useCrm } from "@/components/providers/crm-provider";
+import { APPOINTMENT_STATUSES, APPOINTMENT_TYPES, type AppointmentStatus, type AppointmentType } from "@/lib/crm/types";
 
 type Relation = { id: string; businessName: string };
 
@@ -15,111 +17,139 @@ export function AppointmentForm({
   onSaved,
   leads,
   clients,
+  onClose,
+  initialLeadId,
 }: {
-  onSaved: () => void;
+  onSaved?: () => void;
   leads: Relation[];
   clients: Relation[];
+  onClose?: () => void;
+  initialLeadId?: string | null;
 }) {
+  const { createAppointment, state, setModalOpen } = useCrm();
   const form = useForm({
-    resolver: zodResolver(appointmentSchema),
+    resolver: zodResolver(appointmentCrmSchema),
     defaultValues: {
       title: "",
-      type: "DEMO",
+      type: "DEMO" as AppointmentType,
       date: new Date().toISOString().split("T")[0],
       time: "10:00",
-      duration: 45,
-      status: "PENDIENTE",
-      priority: "MEDIA",
+      status: "PENDIENTE" as AppointmentStatus,
       notes: "",
       nextAction: "",
-      reminder: "MIN_15",
-      meetingLink: "",
-      location: "",
-      leadId: "__none",
-      clientId: "__none",
+      leadId: "__none" as string | null,
+      clientId: "__none" as string | null,
+      sellerId: "__none" as string | null,
     },
   });
 
-  const submit = form.handleSubmit(async (v) => {
-    await fetch("/api/appointments", {
-      method: "POST",
-      body: JSON.stringify(v),
+  useEffect(() => {
+    if (!initialLeadId) return;
+    form.setValue("leadId", initialLeadId);
+    form.setValue("type", "DEMO");
+    form.setValue("title", "Demo comercial");
+  }, [initialLeadId, form]);
+
+  const submit = form.handleSubmit((v) => {
+    createAppointment({
+      title: v.title,
+      type: v.type as AppointmentType,
+      date: v.date,
+      time: v.time,
+      status: v.status as AppointmentStatus,
+      notes: v.notes || null,
+      nextAction: v.nextAction || null,
+      leadId: !v.leadId || v.leadId === "__none" ? null : v.leadId,
+      clientId: !v.clientId || v.clientId === "__none" ? null : v.clientId,
+      sellerId: !v.sellerId || v.sellerId === "__none" ? null : v.sellerId,
     });
-    onSaved();
     form.reset();
+    onSaved?.();
+    onClose?.();
+    setModalOpen(null);
   });
 
   return (
     <form className="grid md:grid-cols-2 gap-3" onSubmit={submit}>
-      <Input placeholder="Titulo" {...form.register("title")} className="md:col-span-2" />
+      <Input placeholder="Título" {...form.register("title")} className="md:col-span-2" />
 
-      <Select defaultValue="DEMO" onValueChange={(v) => form.setValue("type", (v ?? "DEMO") as z.infer<typeof appointmentSchema>["type"])}>
-        <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+      <Select defaultValue="DEMO" onValueChange={(v) => form.setValue("type", (v ?? "DEMO") as AppointmentType)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Tipo" />
+        </SelectTrigger>
         <SelectContent>
-          <SelectItem value="DEMO">Demo</SelectItem>
-          <SelectItem value="LLAMADA">Llamada</SelectItem>
-          <SelectItem value="SEGUIMIENTO">Seguimiento</SelectItem>
-          <SelectItem value="REVISION_MENSUAL">Revision mensual</SelectItem>
-          <SelectItem value="COBRO">Cobro</SelectItem>
+          {APPOINTMENT_TYPES.map((t) => (
+            <SelectItem key={t} value={t}>
+              {t.replaceAll("_", " ")}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
-      <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", (v ?? "PENDIENTE") as z.infer<typeof appointmentSchema>["status"])}>
-        <SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger>
+      <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", (v ?? "PENDIENTE") as AppointmentStatus)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Estado" />
+        </SelectTrigger>
         <SelectContent>
-          <SelectItem value="PENDIENTE">Pendiente</SelectItem>
-          <SelectItem value="COMPLETADA">Completada</SelectItem>
-          <SelectItem value="CANCELADA">Cancelada</SelectItem>
-          <SelectItem value="REAGENDADA">Reagendada</SelectItem>
+          {APPOINTMENT_STATUSES.map((s) => (
+            <SelectItem key={s} value={s}>
+              {s.replaceAll("_", " ")}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
       <Input type="date" {...form.register("date")} />
       <Input type="time" {...form.register("time")} />
-      <Input type="number" min={15} step={15} placeholder="Duracion (min)" {...form.register("duration")} />
 
-      <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", (v ?? "MEDIA") as z.infer<typeof appointmentSchema>["priority"])}>
-        <SelectTrigger><SelectValue placeholder="Prioridad" /></SelectTrigger>
+      <Select defaultValue="__none" onValueChange={(v) => form.setValue("sellerId", v ?? "__none")}>
+        <SelectTrigger>
+          <SelectValue placeholder="Vendedor" />
+        </SelectTrigger>
         <SelectContent>
-          <SelectItem value="BAJA">Baja</SelectItem>
-          <SelectItem value="MEDIA">Media</SelectItem>
-          <SelectItem value="ALTA">Alta</SelectItem>
-          <SelectItem value="URGENTE">Urgente</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select defaultValue="MIN_15" onValueChange={(v) => form.setValue("reminder", (v ?? "MIN_15") as z.infer<typeof appointmentSchema>["reminder"])}>
-        <SelectTrigger><SelectValue placeholder="Recordatorio" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="NONE">Sin recordatorio</SelectItem>
-          <SelectItem value="MIN_15">15 minutos antes</SelectItem>
-          <SelectItem value="HOUR_1">1 hora antes</SelectItem>
-          <SelectItem value="DAY_1">1 dia antes</SelectItem>
+          <SelectItem value="__none">Sin asignar</SelectItem>
+          {state.sellers.filter((x) => x.active && (x.role === "VENDEDOR" || x.role === "ADMIN")).map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
       <Select defaultValue="__none" onValueChange={(v) => form.setValue("leadId", v ?? "__none")}>
-        <SelectTrigger><SelectValue placeholder="Relacionar con lead" /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue placeholder="Lead" />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">Sin lead</SelectItem>
-          {leads.map((lead) => <SelectItem key={lead.id} value={lead.id}>{lead.businessName}</SelectItem>)}
+          {leads.map((lead) => (
+            <SelectItem key={lead.id} value={lead.id}>
+              {lead.businessName}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
       <Select defaultValue="__none" onValueChange={(v) => form.setValue("clientId", v ?? "__none")}>
-        <SelectTrigger><SelectValue placeholder="Relacionar con cliente" /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue placeholder="Cliente" />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">Sin cliente</SelectItem>
-          {clients.map((client) => <SelectItem key={client.id} value={client.id}>{client.businessName}</SelectItem>)}
+          {clients.map((client) => (
+            <SelectItem key={client.id} value={client.id}>
+              {client.businessName}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
 
-      <Input placeholder="Link de llamada (opcional)" {...form.register("meetingLink")} className="md:col-span-2" />
-      <Input placeholder="Ubicacion (opcional)" {...form.register("location")} className="md:col-span-2" />
-      <Input placeholder="Proxima accion" {...form.register("nextAction")} className="md:col-span-2" />
+      <Input placeholder="Próxima acción" {...form.register("nextAction")} className="md:col-span-2" />
       <Textarea placeholder="Notas" {...form.register("notes")} className="md:col-span-2" />
 
-      <Button type="submit" className="md:col-span-2 bg-primary text-black font-semibold">Guardar cita</Button>
+      <Button type="submit" className="md:col-span-2 bg-primary text-black font-semibold">
+        Guardar cita
+      </Button>
     </form>
   );
 }

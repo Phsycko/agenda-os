@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type { ClientStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { clientSchema } from "@/lib/validations";
 
@@ -18,7 +17,7 @@ export async function POST(req: Request) {
   const client = await prisma.client.create({
     data: {
       ...rest,
-      status: status as ClientStatus,
+      status: status as "ACTIVO" | "PAUSADO" | "CANCELADO",
       email: data.email || null,
       startDate: new Date(startDate),
     },

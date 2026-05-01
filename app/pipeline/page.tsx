@@ -1,16 +1,20 @@
+"use client";
+
 import { AppShell } from "@/components/layout/app-shell";
 import { PipelineBoard } from "@/components/pipeline/pipeline-board";
-import { prisma } from "@/lib/prisma";
 
-export default async function PipelinePage() {
-  let leads: Awaited<ReturnType<typeof prisma.lead.findMany>> = [];
-  try {
-    leads = await prisma.lead.findMany({ orderBy: { updatedAt: "desc" } });
-  } catch {
-    // sin DB, tablero vacio
-  }
-  return <AppShell title="Pipeline">
-    <div className="mb-4"><h1 className="text-2xl font-semibold">Visualiza en que etapa esta cada prospecto.</h1></div>
-    <PipelineBoard leads={leads} />
-  </AppShell>;
+export default function PipelinePage() {
+  return (
+    <AppShell title="Pipeline">
+      <div className="space-y-6 mb-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Pipeline Kanban</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
+            Mueve oportunidades por etapa. Los cambios se guardan automáticamente y alimentan el dashboard.
+          </p>
+        </div>
+        <PipelineBoard />
+      </div>
+    </AppShell>
+  );
 }

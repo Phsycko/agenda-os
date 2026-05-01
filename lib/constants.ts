@@ -1,28 +1,12 @@
-export const PIPELINE_STAGES = [
-  "NUEVO",
-  "CONTACTADO",
-  "INTERESADO",
-  "DEMO_AGENDADA",
-  "DEMO_REALIZADA",
-  "PROPUESTA_ENVIADA",
-  "CERRADO_GANADO",
-  "CERRADO_PERDIDO",
-] as const;
+import { APPOINTMENT_STATUSES, APPOINTMENT_TYPES, LEAD_SOURCES, LEAD_STAGES, PRIORITIES, TASK_STATUSES } from "@/lib/crm/types";
 
-export const SOURCES = [
-  "FACEBOOK",
-  "INSTAGRAM",
-  "GOOGLE_MAPS",
-  "REFERIDO",
-  "WEB",
-  "OTRO",
-] as const;
-
-export const TEMPERATURES = ["FRIO", "TIBIO", "CALIENTE"] as const;
-export const TASK_PRIORITIES = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
-export const TASK_STATUSES = ["PENDIENTE", "EN_PROGRESO", "COMPLETADA"] as const;
-export const APPOINTMENT_TYPES = ["DEMO", "LLAMADA", "SEGUIMIENTO", "REVISION_MENSUAL", "COBRO"] as const;
-export const APPOINTMENT_STATUSES = ["PENDIENTE", "COMPLETADA", "CANCELADA", "REAGENDADA"] as const;
+export const PIPELINE_STAGES = LEAD_STAGES;
+export const SOURCES = LEAD_SOURCES;
+export const TEMPERATURES = ["FRIO", "TIBIO", "CALIENTE"] as const; // legacy label en algunos textos
+export const TASK_PRIORITIES = PRIORITIES;
+export const TASK_STATUSES_UI = TASK_STATUSES;
+export const APPOINTMENT_TYPES_UI = APPOINTMENT_TYPES;
+export const APPOINTMENT_STATUSES_UI = APPOINTMENT_STATUSES;
 
 export const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },

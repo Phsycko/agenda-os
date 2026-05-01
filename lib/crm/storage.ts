@@ -4,6 +4,7 @@ import { coerceStoredLeadNiche } from "./lead-niches";
 
 /** Asegura campos nuevos en leads guardados antes de una versión con `sector`. */
 export function migrateCrmState(state: CrmState): CrmState {
+  const settings = state.settings as CrmState["settings"] & { agendaDayNotes?: Record<string, string> };
   return {
     ...state,
     leads: state.leads.map((l) => ({
@@ -14,6 +15,10 @@ export function migrateCrmState(state: CrmState): CrmState {
       ...(c as CrmClient),
       sector: coerceStoredLeadNiche((c as Partial<CrmClient>).sector),
     })),
+    settings: {
+      ...state.settings,
+      agendaDayNotes: settings.agendaDayNotes ?? {},
+    },
   };
 }
 

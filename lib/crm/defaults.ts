@@ -10,6 +10,7 @@ export function defaultSettings(): AppSettings {
     leadSources: [...LEAD_SOURCES],
     servicesOffered: ["SEO Local", "Ads Meta", "Automatización WhatsApp", "Branding", "Sitio web"],
     theme: "dark",
+    agendaDayNotes: {},
   };
 }
 

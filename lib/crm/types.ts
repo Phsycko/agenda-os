@@ -89,8 +89,24 @@ export const APPOINTMENT_TYPES = [
 ] as const;
 export type AppointmentType = (typeof APPOINTMENT_TYPES)[number];
 
+export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
+  DEMO: "Demo",
+  LLAMADA: "Llamada",
+  SEGUIMIENTO: "Seguimiento",
+  REVISION_MENSUAL: "Revisión mensual",
+  CIERRE: "Cierre",
+  REUNION_INTERNA: "Reunión interna",
+};
+
 export const APPOINTMENT_STATUSES = ["PENDIENTE", "COMPLETADA", "CANCELADA", "NO_ASISTIO"] as const;
 export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
+
+export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
+  PENDIENTE: "Pendiente",
+  COMPLETADA: "Completada",
+  CANCELADA: "Cancelada",
+  NO_ASISTIO: "No asistió",
+};
 
 export const TASK_STATUSES = ["PENDIENTE", "EN_PROGRESO", "COMPLETADA", "VENCIDA"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
@@ -300,6 +316,8 @@ export type AppSettings = {
   leadSources: LeadSource[];
   servicesOffered: string[];
   theme: "dark";
+  /** Notas libres por fecha (clave `yyyy-MM-dd`) — plan del día estilo Notion */
+  agendaDayNotes: Record<string, string>;
 };
 
 export type DemoIds = {

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { readPersonalItems, writePersonalItems } from "@/lib/personal-store";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();

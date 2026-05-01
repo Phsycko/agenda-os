@@ -11,15 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { LeadForm } from "@/components/forms/lead-form";
-import { LeadNicheSelectGroups } from "@/components/forms/lead-niche-select-groups";
+import { LeadNichePicker, LeadNicheFilterPicker } from "@/components/forms/lead-niche-picker";
 import { TaskForm } from "@/components/forms/task-form";
 import { AppointmentForm } from "@/components/forms/appointment-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCrm } from "@/components/providers/crm-provider";
 import { filterLeadsForUser, isReadOnly } from "@/lib/crm/permissions";
-import { isValidLeadNicheId } from "@/lib/crm/lead-niches";
-import { LEAD_SOURCES, LEAD_STAGES, PRIORITIES, leadNicheLabel, type LeadSource, type LeadStage, type Priority } from "@/lib/crm/types";
+import {
+  LEAD_SOURCES,
+  LEAD_STAGES,
+  PRIORITIES,
+  LEAD_SOURCE_LABELS,
+  LEAD_STAGE_LABELS,
+  PRIORITY_LABELS,
+  leadNicheLabel,
+  type LeadSource,
+  type LeadStage,
+  type Priority,
+} from "@/lib/crm/types";
 
 const stageOrder = LEAD_STAGES;
 
@@ -132,47 +143,65 @@ export default function LeadsPage() {
               className="xl:col-span-2"
             />
             <Select value={filters.stage} onValueChange={(v) => setFilters((p) => ({ ...p, stage: v ?? "ALL" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Etapa" />
+              <SelectTrigger className="w-full min-w-0">
+                <SelectValue placeholder="Etapa">
+                  {(v) =>
+                    !v || v === "ALL"
+                      ? "Todas las etapas"
+                      : LEAD_STAGE_LABELS[v as LeadStage] ?? String(v).replaceAll("_", " ")
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas las etapas</SelectItem>
                 {stageOrder.map((stage) => (
                   <SelectItem key={stage} value={stage}>
-                    {stage.replaceAll("_", " ")}
+                    {LEAD_STAGE_LABELS[stage]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={filters.source} onValueChange={(v) => setFilters((p) => ({ ...p, source: v ?? "ALL" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Fuente" />
+              <SelectTrigger className="w-full min-w-0">
+                <SelectValue placeholder="Fuente">
+                  {(v) => (!v || v === "ALL" ? "Todas las fuentes" : LEAD_SOURCE_LABELS[v as LeadSource] ?? String(v))}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas las fuentes</SelectItem>
                 {LEAD_SOURCES.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {LEAD_SOURCE_LABELS[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={filters.priority} onValueChange={(v) => setFilters((p) => ({ ...p, priority: v ?? "ALL" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Prioridad" />
+              <SelectTrigger className="w-full min-w-0">
+                <SelectValue placeholder="Prioridad">
+                  {(v) => (!v || v === "ALL" ? "Todas" : PRIORITY_LABELS[v as Priority] ?? String(v))}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todas</SelectItem>
                 {PRIORITIES.map((p) => (
                   <SelectItem key={p} value={p}>
-                    {p}
+                    {PRIORITY_LABELS[p]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <Select value={filters.seller} onValueChange={(v) => setFilters((p) => ({ ...p, seller: v ?? "ALL" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Vendedor" />
+              <SelectTrigger className="w-full min-w-0">
+                <SelectValue placeholder="Vendedor">
+                  {(v) =>
+                    !v || v === "ALL"
+                      ? "Todos"
+                      : v === "__unassigned"
+                        ? "Sin asignar"
+                        : sellers.find((s) => s.id === v)?.name ?? "Vendedor"
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Todos</SelectItem>
@@ -184,19 +213,7 @@ export default function LeadsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filters.sector} onValueChange={(v) => setFilters((p) => ({ ...p, sector: v ?? "ALL" }))}>
-              <SelectTrigger className="min-w-0">
-                <SelectValue placeholder="Nicho" />
-              </SelectTrigger>
-              <SelectContent
-                align="start"
-                className="max-h-[min(75vh,28rem)] w-[min(92vw,28rem)] min-w-[var(--anchor-width)]"
-              >
-                <SelectItem value="ALL">Todos los nichos</SelectItem>
-                <SelectItem value="__none">Sin nicho</SelectItem>
-                <LeadNicheSelectGroups />
-              </SelectContent>
-            </Select>
+            <LeadNicheFilterPicker value={filters.sector} onChange={(v) => setFilters((p) => ({ ...p, sector: v }))} />
             <Input type="date" value={filters.dateFrom} onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))} />
           </CardContent>
         </Card>
@@ -208,7 +225,7 @@ export default function LeadsPage() {
             cta="Nuevo lead"
           />
         ) : (
-          <div className="grid xl:grid-cols-[minmax(0,1fr)_400px] gap-4">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_min(28rem,calc(100vw-2rem))]">
             <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-base">Listado</CardTitle>
@@ -270,10 +287,10 @@ export default function LeadsPage() {
             </Card>
 
             <Card className="bg-card border-border xl:sticky xl:top-20 h-fit max-h-[calc(100vh-6rem)] overflow-y-auto">
-              <CardHeader>
-                <CardTitle className="text-base">Detalle</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Detalle del lead</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4 px-4 pb-5 sm:px-5">
                 {!selected ? (
                   <p className="text-sm text-muted-foreground">Selecciona un lead para gestionarlo.</p>
                 ) : readOnly ? (
@@ -282,164 +299,257 @@ export default function LeadsPage() {
                     <p>
                       {selected.contactName} · {selected.phone}
                     </p>
-                    <p>Etapa: {selected.stage.replaceAll("_", " ")}</p>
+                    <p>Etapa: {LEAD_STAGE_LABELS[selected.stage]}</p>
                     {selected.sector ? <p>Nicho: {leadNicheLabel(selected.sector)}</p> : null}
                     <p className="text-xs pt-2">Vista solo lectura (rol Viewer).</p>
                   </div>
                 ) : (
                   <>
-                    <Input
-                      value={selected.businessName}
-                      onChange={(e) => updateLead(selected.id, { businessName: e.target.value })}
-                      placeholder="Negocio"
-                    />
-                    <Input
-                      value={selected.contactName}
-                      onChange={(e) => updateLead(selected.id, { contactName: e.target.value })}
-                      placeholder="Contacto"
-                    />
-                    <Input value={selected.phone} onChange={(e) => updateLead(selected.id, { phone: e.target.value })} placeholder="Teléfono" />
-                    <Input
-                      value={selected.email ?? ""}
-                      onChange={(e) => updateLead(selected.id, { email: e.target.value || null })}
-                      placeholder="Email"
-                    />
-                    <Input value={selected.service} onChange={(e) => updateLead(selected.id, { service: e.target.value })} placeholder="Servicio" />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input value={selected.city} onChange={(e) => updateLead(selected.id, { city: e.target.value })} placeholder="Ciudad" />
-                      <Select
-                        value={selected.sector && isValidLeadNicheId(selected.sector) ? selected.sector : "__none"}
-                        onValueChange={(v) =>
-                          updateLead(selected.id, {
-                            sector: v === "__none" || !isValidLeadNicheId(v) ? null : v,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="min-w-0">
-                          <SelectValue placeholder="Giro / nicho" />
-                        </SelectTrigger>
-                        <SelectContent
-                          align="start"
-                          className="max-h-[min(70vh,24rem)] w-[min(92vw,24rem)] min-w-[var(--anchor-width)]"
-                        >
-                          <SelectItem value="__none">Sin especificar</SelectItem>
-                          <LeadNicheSelectGroups />
-                        </SelectContent>
-                      </Select>
+                    <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Negocio y contacto</p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">Nombre del negocio</Label>
+                          <Input
+                            value={selected.businessName}
+                            onChange={(e) => updateLead(selected.id, { businessName: e.target.value })}
+                            placeholder="Negocio"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Contacto</Label>
+                          <Input
+                            value={selected.contactName}
+                            onChange={(e) => updateLead(selected.id, { contactName: e.target.value })}
+                            placeholder="Nombre"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Teléfono</Label>
+                          <Input
+                            value={selected.phone}
+                            onChange={(e) => updateLead(selected.id, { phone: e.target.value })}
+                            placeholder="Teléfono"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">Email</Label>
+                          <Input
+                            value={selected.email ?? ""}
+                            onChange={(e) => updateLead(selected.id, { email: e.target.value || null })}
+                            placeholder="Email"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Select
-                        value={selected.source}
-                        onValueChange={(v) => updateLead(selected.id, { source: (v ?? selected.source) as LeadSource })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LEAD_SOURCES.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {s}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Select
-                        value={selected.priority}
-                        onValueChange={(v) => updateLead(selected.id, { priority: (v ?? selected.priority) as Priority })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PRIORITIES.map((p) => (
-                            <SelectItem key={p} value={p}>
-                              {p}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Select
-                      value={selected.stage}
-                      onValueChange={(v) => updateLead(selected.id, { stage: (v ?? selected.stage) as LeadStage })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stageOrder.map((stage) => (
-                          <SelectItem key={stage} value={stage}>
-                            {stage.replaceAll("_", " ")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={selected.assignedSellerId ?? "__none"}
-                      onValueChange={(v) =>
-                        updateLead(selected.id, { assignedSellerId: v === "__none" ? null : (v ?? null) })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vendedor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">Sin asignar</SelectItem>
-                        {sellers.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      value={selected.estimatedValue ?? ""}
-                      onChange={(e) =>
-                        updateLead(selected.id, { estimatedValue: e.target.value === "" ? null : Number(e.target.value) })
-                      }
-                      placeholder="Valor estimado"
-                    />
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="date"
-                        value={selected.lastContactAt ? selected.lastContactAt.slice(0, 10) : ""}
-                        onChange={(e) =>
-                          updateLead(selected.id, {
-                            lastContactAt: e.target.value ? new Date(e.target.value).toISOString() : null,
-                          })
-                        }
-                      />
-                      <Input
-                        type="date"
-                        value={selected.nextFollowUpAt ? selected.nextFollowUpAt.slice(0, 10) : ""}
-                        onChange={(e) =>
-                          updateLead(selected.id, {
-                            nextFollowUpAt: e.target.value ? new Date(e.target.value).toISOString() : null,
-                          })
-                        }
-                      />
-                    </div>
-                    <Input
-                      value={selected.nextAction ?? ""}
-                      onChange={(e) => updateLead(selected.id, { nextAction: e.target.value || null })}
-                      placeholder="Próxima acción"
-                    />
-                    {selected.stage === "CERRADO_PERDIDO" ? (
-                      <Input
-                        value={selected.lossReason ?? ""}
-                        onChange={(e) => updateLead(selected.id, { lossReason: e.target.value || null })}
-                        placeholder="Motivo de pérdida"
-                      />
-                    ) : null}
-                    <Textarea
-                      value={selected.notes ?? ""}
-                      onChange={(e) => updateLead(selected.id, { notes: e.target.value })}
-                      placeholder="Notas generales"
-                    />
 
-                    <div className="border-t border-border pt-3 space-y-2">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Notas internas</p>
+                    <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Servicio y ubicación</p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">Servicio de interés</Label>
+                          <Input
+                            value={selected.service}
+                            onChange={(e) => updateLead(selected.id, { service: e.target.value })}
+                            placeholder="Servicio"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Ciudad</Label>
+                          <Input
+                            value={selected.city}
+                            onChange={(e) => updateLead(selected.id, { city: e.target.value })}
+                            placeholder="Ciudad"
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Giro / nicho</Label>
+                          <LeadNichePicker
+                            value={selected.sector}
+                            onChange={(next) => updateLead(selected.id, { sector: next })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Embudo y asignación</p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Fuente</Label>
+                          <Select
+                            value={selected.source}
+                            onValueChange={(v) => updateLead(selected.id, { source: (v ?? selected.source) as LeadSource })}
+                          >
+                            <SelectTrigger className="h-9 w-full min-w-0">
+                              <SelectValue>
+                                {(v) => (v ? LEAD_SOURCE_LABELS[v as LeadSource] ?? String(v) : "")}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LEAD_SOURCES.map((s) => (
+                                <SelectItem key={s} value={s}>
+                                  {LEAD_SOURCE_LABELS[s]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Prioridad</Label>
+                          <Select
+                            value={selected.priority}
+                            onValueChange={(v) => updateLead(selected.id, { priority: (v ?? selected.priority) as Priority })}
+                          >
+                            <SelectTrigger className="h-9 w-full min-w-0">
+                              <SelectValue>
+                                {(v) => (v ? PRIORITY_LABELS[v as Priority] ?? String(v) : "")}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PRIORITIES.map((p) => (
+                                <SelectItem key={p} value={p}>
+                                  {PRIORITY_LABELS[p]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">Etapa</Label>
+                          <Select
+                            value={selected.stage}
+                            onValueChange={(v) => updateLead(selected.id, { stage: (v ?? selected.stage) as LeadStage })}
+                          >
+                            <SelectTrigger className="h-9 w-full min-w-0">
+                              <SelectValue>
+                                {(v) => (v ? LEAD_STAGE_LABELS[v as LeadStage] ?? String(v) : "")}
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stageOrder.map((stage) => (
+                                <SelectItem key={stage} value={stage}>
+                                  {LEAD_STAGE_LABELS[stage]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Vendedor</Label>
+                          <Select
+                            value={selected.assignedSellerId ?? "__none"}
+                            onValueChange={(v) =>
+                              updateLead(selected.id, { assignedSellerId: v === "__none" ? null : (v ?? null) })
+                            }
+                          >
+                            <SelectTrigger className="h-9 w-full min-w-0">
+                              <SelectValue placeholder="Sin asignar">
+                                {(v) =>
+                                  !v || v === "__none"
+                                    ? "Sin asignar"
+                                    : sellers.find((s) => s.id === v)?.name ?? "Sin asignar"
+                                }
+                              </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__none">Sin asignar</SelectItem>
+                              {sellers.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Valor estimado (USD)</Label>
+                          <Input
+                            type="number"
+                            value={selected.estimatedValue ?? ""}
+                            onChange={(e) =>
+                              updateLead(selected.id, { estimatedValue: e.target.value === "" ? null : Number(e.target.value) })
+                            }
+                            placeholder="0"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Seguimiento</p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Último contacto</Label>
+                          <Input
+                            type="date"
+                            value={selected.lastContactAt ? selected.lastContactAt.slice(0, 10) : ""}
+                            onChange={(e) =>
+                              updateLead(selected.id, {
+                                lastContactAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                              })
+                            }
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Próximo seguimiento</Label>
+                          <Input
+                            type="date"
+                            value={selected.nextFollowUpAt ? selected.nextFollowUpAt.slice(0, 10) : ""}
+                            onChange={(e) =>
+                              updateLead(selected.id, {
+                                nextFollowUpAt: e.target.value ? new Date(e.target.value).toISOString() : null,
+                              })
+                            }
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="space-y-1.5 sm:col-span-2">
+                          <Label className="text-xs text-muted-foreground">Próxima acción</Label>
+                          <Input
+                            value={selected.nextAction ?? ""}
+                            onChange={(e) => updateLead(selected.id, { nextAction: e.target.value || null })}
+                            placeholder="Qué sigue con este lead"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {selected.stage === "CERRADO_PERDIDO" ? (
+                      <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs text-muted-foreground">Motivo de pérdida</Label>
+                          <Input
+                            value={selected.lossReason ?? ""}
+                            onChange={(e) => updateLead(selected.id, { lossReason: e.target.value || null })}
+                            placeholder="Por qué se perdió"
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-xl border border-border/80 bg-[#0a0a0a] p-4 shadow-sm">
+                      <Label className="text-xs text-muted-foreground">Notas generales</Label>
+                      <Textarea
+                        value={selected.notes ?? ""}
+                        onChange={(e) => updateLead(selected.id, { notes: e.target.value })}
+                        placeholder="Contexto del lead, objeciones, acuerdos…"
+                        className="mt-2 min-h-[100px] resize-y"
+                      />
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notas internas</p>
                       <div className="space-y-2 max-h-32 overflow-y-auto">
                         {selected.internalNotes.map((n) => (
                           <div key={n.id} className="text-xs rounded-md border border-border/60 p-2 bg-[#111]">

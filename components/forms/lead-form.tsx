@@ -7,12 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrm } from "@/components/providers/crm-provider";
-import { LeadNicheSelectGroups } from "@/components/forms/lead-niche-select-groups";
+import { LeadNichePicker } from "@/components/forms/lead-niche-picker";
 import { isValidLeadNicheId } from "@/lib/crm/lead-niches";
 import {
   LEAD_SOURCES,
   LEAD_STAGES,
+  LEAD_SOURCE_LABELS,
+  LEAD_STAGE_LABELS,
   PRIORITIES,
+  PRIORITY_LABELS,
   type LeadSource,
   type LeadStage,
   type Priority,
@@ -87,39 +90,45 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
       <Input type="number" placeholder="Valor estimado" {...form.register("estimatedValue")} />
 
       <Select value={source || "OTRO"} onValueChange={(v) => form.setValue("source", v ?? "OTRO")}>
-        <SelectTrigger>
-          <SelectValue placeholder="Fuente" />
+        <SelectTrigger className="w-full min-w-0">
+          <SelectValue placeholder="Fuente">
+            {(v) => (v ? LEAD_SOURCE_LABELS[v as LeadSource] ?? String(v) : "")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {LEAD_SOURCES.map((s) => (
             <SelectItem key={s} value={s}>
-              {s.replaceAll("_", " ")}
+              {LEAD_SOURCE_LABELS[s]}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select value={priority || "MEDIA"} onValueChange={(v) => form.setValue("priority", v ?? "MEDIA")}>
-        <SelectTrigger>
-          <SelectValue placeholder="Prioridad" />
+        <SelectTrigger className="w-full min-w-0">
+          <SelectValue placeholder="Prioridad">
+            {(v) => (v ? PRIORITY_LABELS[v as Priority] ?? String(v) : "")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {PRIORITIES.map((p) => (
             <SelectItem key={p} value={p}>
-              {p}
+              {PRIORITY_LABELS[p]}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Select value={stage || "NUEVO"} onValueChange={(v) => form.setValue("stage", v ?? "NUEVO")}>
-        <SelectTrigger>
-          <SelectValue placeholder="Etapa" />
+        <SelectTrigger className="w-full min-w-0">
+          <SelectValue placeholder="Etapa">
+            {(v) => (v ? LEAD_STAGE_LABELS[v as LeadStage] ?? String(v).replaceAll("_", " ") : "")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {LEAD_STAGES.map((st) => (
             <SelectItem key={st} value={st}>
-              {st.replaceAll("_", " ")}
+              {LEAD_STAGE_LABELS[st]}
             </SelectItem>
           ))}
         </SelectContent>
@@ -129,8 +138,14 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
         value={assignedSellerId?.trim() ? assignedSellerId : "__none"}
         onValueChange={(v) => form.setValue("assignedSellerId", v === "__none" ? "" : (v ?? ""))}
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Vendedor asignado" />
+        <SelectTrigger className="w-full min-w-0">
+          <SelectValue placeholder="Vendedor asignado">
+            {(v) =>
+              !v || v === "__none"
+                ? "Sin asignar"
+                : state.sellers.find((s) => s.id === v)?.name ?? "Vendedor"
+            }
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">Sin asignar</SelectItem>
@@ -143,21 +158,10 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
       </Select>
 
       <div className="md:col-span-2">
-        <Select
-          value={sector && isValidLeadNicheId(sector) ? sector : "__none"}
-          onValueChange={(v) => form.setValue("sector", v === "__none" ? "" : (v ?? ""))}
-        >
-          <SelectTrigger className="w-full min-w-0">
-            <SelectValue placeholder="Giro / nicho del negocio" />
-          </SelectTrigger>
-          <SelectContent
-            align="start"
-            className="max-h-[min(75vh,28rem)] w-[min(92vw,28rem)] min-w-[var(--anchor-width)]"
-          >
-            <SelectItem value="__none">Sin especificar</SelectItem>
-            <LeadNicheSelectGroups />
-          </SelectContent>
-        </Select>
+        <LeadNichePicker
+          value={sector && isValidLeadNicheId(sector) ? sector : null}
+          onChange={(next) => form.setValue("sector", next ?? "")}
+        />
       </div>
 
       <Input type="date" placeholder="Último contacto" {...form.register("lastContactAt")} />

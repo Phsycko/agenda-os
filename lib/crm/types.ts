@@ -25,6 +25,28 @@ export const LEAD_SOURCES = [
 ] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
+/** Etiquetas UI para selects (evita mostrar enums crudos tipo INSTAGRAM). */
+export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
+  FACEBOOK: "Facebook",
+  INSTAGRAM: "Instagram",
+  WHATSAPP: "WhatsApp",
+  REFERIDO: "Referido",
+  WEB: "Web",
+  LLAMADA: "Llamada",
+  OTRO: "Otro",
+};
+
+export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
+  NUEVO: "Nuevo",
+  CONTACTADO: "Contactado",
+  INTERESADO: "Interesado",
+  DEMO_AGENDADA: "Demo agendada",
+  DEMO_REALIZADA: "Demo realizada",
+  PROPUESTA_ENVIADA: "Propuesta enviada",
+  CERRADO_GANADO: "Cerrado ganado",
+  CERRADO_PERDIDO: "Cerrado perdido",
+};
+
 /** ID de nicho del catálogo `lib/crm/lead-niches.ts` */
 export type LeadSector = string;
 
@@ -39,6 +61,13 @@ export {
 
 export const PRIORITIES = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
 export type Priority = (typeof PRIORITIES)[number];
+
+export const PRIORITY_LABELS: Record<Priority, string> = {
+  BAJA: "Baja",
+  MEDIA: "Media",
+  ALTA: "Alta",
+  URGENTE: "Urgente",
+};
 
 export const CLIENT_STATUSES = ["ACTIVO", "PAUSADO", "CANCELADO", "PENDIENTE"] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];

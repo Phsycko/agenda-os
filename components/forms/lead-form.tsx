@@ -7,13 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrm } from "@/components/providers/crm-provider";
+import { LeadNicheSelectGroups } from "@/components/forms/lead-niche-select-groups";
+import { isValidLeadNicheId } from "@/lib/crm/lead-niches";
 import {
-  LEAD_SECTORS,
-  LEAD_SECTOR_LABELS,
   LEAD_SOURCES,
   LEAD_STAGES,
   PRIORITIES,
-  type LeadSector,
   type LeadSource,
   type LeadStage,
   type Priority,
@@ -51,8 +50,7 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
   });
 
   const onSubmit = form.handleSubmit((values) => {
-    const sectorVal =
-      values.sector && (LEAD_SECTORS as readonly string[]).includes(values.sector) ? (values.sector as LeadSector) : null;
+    const sectorVal = values.sector && isValidLeadNicheId(values.sector) ? values.sector : null;
     createLead({
       contactName: values.contactName?.trim() || "",
       businessName: values.businessName?.trim() || "",
@@ -146,19 +144,18 @@ export function LeadForm({ onSaved, onClose }: { onSaved?: () => void; onClose?:
 
       <div className="md:col-span-2">
         <Select
-          value={sector && (LEAD_SECTORS as readonly string[]).includes(sector) ? sector : "__none"}
+          value={sector && isValidLeadNicheId(sector) ? sector : "__none"}
           onValueChange={(v) => form.setValue("sector", v === "__none" ? "" : (v ?? ""))}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Sector / giro del negocio" />
+          <SelectTrigger className="w-full min-w-0">
+            <SelectValue placeholder="Giro / nicho del negocio" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent
+            align="start"
+            className="max-h-[min(75vh,28rem)] w-[min(92vw,28rem)] min-w-[var(--anchor-width)]"
+          >
             <SelectItem value="__none">Sin especificar</SelectItem>
-            {LEAD_SECTORS.map((s) => (
-              <SelectItem key={s} value={s}>
-                {LEAD_SECTOR_LABELS[s]}
-              </SelectItem>
-            ))}
+            <LeadNicheSelectGroups />
           </SelectContent>
         </Select>
       </div>

@@ -1,6 +1,6 @@
 import { addDays, endOfWeek, isAfter, isBefore, isSameDay, isWithinInterval, parseISO, startOfDay, startOfWeek } from "date-fns";
 import type { ActivityEntry, CrmAppointment, CrmFinance, CrmLead, CrmSeller, CrmState, CrmTask } from "./types";
-import { LEAD_SECTOR_LABELS, LEAD_STAGES } from "./types";
+import { leadNicheLabel, LEAD_STAGES } from "./types";
 import { filterAppointmentsForUser, filterLeadsForUser, filterTasksForUser, getCurrentSeller } from "./permissions";
 
 function startOfCurrentMonth() {
@@ -152,7 +152,7 @@ export function globalSearch(state: CrmState, q: string, limit = 20): GlobalSear
   const out: GlobalSearchHit[] = [];
 
   for (const l of leads) {
-    const sectorText = l.sector ? LEAD_SECTOR_LABELS[l.sector] : "";
+    const sectorText = l.sector ? leadNicheLabel(l.sector) : "";
     const hay = `${l.contactName} ${l.businessName} ${l.phone} ${l.email ?? ""} ${l.city} ${l.service} ${sectorText}`.toLowerCase();
     if (hay.includes(query)) out.push({ kind: "lead", id: l.id, label: l.businessName, sub: l.contactName, href: "/leads" });
   }

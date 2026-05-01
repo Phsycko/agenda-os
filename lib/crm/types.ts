@@ -25,29 +25,17 @@ export const LEAD_SOURCES = [
 ] as const;
 export type LeadSource = (typeof LEAD_SOURCES)[number];
 
-/** Sector / giro del negocio del lead */
-export const LEAD_SECTORS = [
-  "LANDSCAPE",
-  "ELECTRICIDAD",
-  "PLOMERIA",
-  "LIMPIEZA",
-  "ROOFING",
-  "CONSTRUCCION",
-  "SOLDADURA",
-  "OTRO",
-] as const;
-export type LeadSector = (typeof LEAD_SECTORS)[number];
+/** ID de nicho del catálogo `lib/crm/lead-niches.ts` */
+export type LeadSector = string;
 
-export const LEAD_SECTOR_LABELS: Record<LeadSector, string> = {
-  LANDSCAPE: "Landscape",
-  ELECTRICIDAD: "Electricidad",
-  PLOMERIA: "Plomería",
-  LIMPIEZA: "Limpieza",
-  ROOFING: "Roofero / roofing",
-  CONSTRUCCION: "Construcción",
-  SOLDADURA: "Soldadura",
-  OTRO: "Otro sector",
-};
+export {
+  ALL_LEAD_NICHE_IDS,
+  LEAD_NICHE_GROUPS,
+  LEAD_NICHE_LABELS,
+  coerceStoredLeadNiche,
+  isValidLeadNicheId,
+  leadNicheLabel,
+} from "./lead-niches";
 
 export const PRIORITIES = ["BAJA", "MEDIA", "ALTA", "URGENTE"] as const;
 export type Priority = (typeof PRIORITIES)[number];
@@ -119,8 +107,8 @@ export type CrmLead = {
   phone: string;
   email: string | null;
   city: string;
-  /** Giro o sector del negocio (dropdown) */
-  sector: LeadSector | null;
+  /** Giro / nicho del negocio (id del catálogo lead-niches) */
+  sector: string | null;
   service: string;
   source: LeadSource;
   stage: LeadStage;

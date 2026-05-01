@@ -12,22 +12,14 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { LeadForm } from "@/components/forms/lead-form";
+import { LeadNicheSelectGroups } from "@/components/forms/lead-niche-select-groups";
 import { TaskForm } from "@/components/forms/task-form";
 import { AppointmentForm } from "@/components/forms/appointment-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useCrm } from "@/components/providers/crm-provider";
 import { filterLeadsForUser, isReadOnly } from "@/lib/crm/permissions";
-import {
-  LEAD_SECTORS,
-  LEAD_SECTOR_LABELS,
-  LEAD_SOURCES,
-  LEAD_STAGES,
-  PRIORITIES,
-  type LeadSector,
-  type LeadSource,
-  type LeadStage,
-  type Priority,
-} from "@/lib/crm/types";
+import { isValidLeadNicheId } from "@/lib/crm/lead-niches";
+import { LEAD_SOURCES, LEAD_STAGES, PRIORITIES, leadNicheLabel, type LeadSource, type LeadStage, type Priority } from "@/lib/crm/types";
 
 const stageOrder = LEAD_STAGES;
 
@@ -71,7 +63,7 @@ export default function LeadsPage() {
   const filtered = useMemo(() => {
     return leads.filter((lead) => {
       const seller = lead.assignedSellerId ? state.sellers.find((s) => s.id === lead.assignedSellerId)?.name ?? "" : "";
-      const sectorLabel = lead.sector ? LEAD_SECTOR_LABELS[lead.sector] : "";
+      const sectorLabel = lead.sector ? leadNicheLabel(lead.sector) : "";
       const text =
         `${lead.contactName} ${lead.businessName} ${lead.phone} ${lead.email ?? ""} ${lead.city} ${lead.service} ${sectorLabel} ${seller}`.toLowerCase();
       const matchQuery = text.includes(query.toLowerCase());
@@ -83,7 +75,7 @@ export default function LeadsPage() {
         (filters.seller === "__unassigned" ? !lead.assignedSellerId : lead.assignedSellerId === filters.seller);
       const matchSector =
         filters.sector === "ALL" ||
-        (filters.sector === "__none" ? !lead.sector : lead.sector === (filters.sector as LeadSector));
+        (filters.sector === "__none" ? !lead.sector : lead.sector === filters.sector);
       const matchDate =
         !filters.dateFrom || !lead.createdAt || parseISO(lead.createdAt) >= parseISO(filters.dateFrom + "T00:00:00");
       return matchQuery && matchStage && matchSource && matchPri && matchSeller && matchSector && matchDate;
@@ -134,7 +126,7 @@ export default function LeadsPage() {
         <Card className="bg-card border-border">
           <CardContent className="pt-5 grid md:grid-cols-2 xl:grid-cols-7 gap-3">
             <Input
-              placeholder="Buscar: nombre, negocio, teléfono, ciudad, servicio, sector, fuente o vendedor"
+              placeholder="Buscar: nombre, negocio, teléfono, ciudad, servicio, nicho, fuente o vendedor"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="xl:col-span-2"
@@ -193,17 +185,16 @@ export default function LeadsPage() {
               </SelectContent>
             </Select>
             <Select value={filters.sector} onValueChange={(v) => setFilters((p) => ({ ...p, sector: v ?? "ALL" }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sector" />
+              <SelectTrigger className="min-w-0">
+                <SelectValue placeholder="Nicho" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Todos los sectores</SelectItem>
-                <SelectItem value="__none">Sin sector</SelectItem>
-                {LEAD_SECTORS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {LEAD_SECTOR_LABELS[s]}
-                  </SelectItem>
-                ))}
+              <SelectContent
+                align="start"
+                className="max-h-[min(75vh,28rem)] w-[min(92vw,28rem)] min-w-[var(--anchor-width)]"
+              >
+                <SelectItem value="ALL">Todos los nichos</SelectItem>
+                <SelectItem value="__none">Sin nicho</SelectItem>
+                <LeadNicheSelectGroups />
               </SelectContent>
             </Select>
             <Input type="date" value={filters.dateFrom} onChange={(e) => setFilters((p) => ({ ...p, dateFrom: e.target.value }))} />
@@ -249,7 +240,7 @@ export default function LeadsPage() {
                         {lead.sector ? (
                           <>
                             <span>•</span>
-                            <span>{LEAD_SECTOR_LABELS[lead.sector]}</span>
+                            <span>{leadNicheLabel(lead.sector)}</span>
                           </>
                         ) : null}
                         <span>•</span>
@@ -292,7 +283,7 @@ export default function LeadsPage() {
                       {selected.contactName} · {selected.phone}
                     </p>
                     <p>Etapa: {selected.stage.replaceAll("_", " ")}</p>
-                    {selected.sector ? <p>Sector: {LEAD_SECTOR_LABELS[selected.sector]}</p> : null}
+                    {selected.sector ? <p>Nicho: {leadNicheLabel(selected.sector)}</p> : null}
                     <p className="text-xs pt-2">Vista solo lectura (rol Viewer).</p>
                   </div>
                 ) : (
@@ -317,21 +308,22 @@ export default function LeadsPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <Input value={selected.city} onChange={(e) => updateLead(selected.id, { city: e.target.value })} placeholder="Ciudad" />
                       <Select
-                        value={selected.sector ?? "__none"}
+                        value={selected.sector && isValidLeadNicheId(selected.sector) ? selected.sector : "__none"}
                         onValueChange={(v) =>
-                          updateLead(selected.id, { sector: v === "__none" ? null : (v as LeadSector) })
+                          updateLead(selected.id, {
+                            sector: v === "__none" || !isValidLeadNicheId(v) ? null : v,
+                          })
                         }
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sector" />
+                        <SelectTrigger className="min-w-0">
+                          <SelectValue placeholder="Giro / nicho" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent
+                          align="start"
+                          className="max-h-[min(70vh,24rem)] w-[min(92vw,24rem)] min-w-[var(--anchor-width)]"
+                        >
                           <SelectItem value="__none">Sin especificar</SelectItem>
-                          {LEAD_SECTORS.map((s) => (
-                            <SelectItem key={s} value={s}>
-                              {LEAD_SECTOR_LABELS[s]}
-                            </SelectItem>
-                          ))}
+                          <LeadNicheSelectGroups />
                         </SelectContent>
                       </Select>
                     </div>

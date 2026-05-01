@@ -1,10 +1,6 @@
-import type { CrmLead, CrmState, LeadSector } from "./types";
-import { LEAD_SECTORS, STORAGE_KEY } from "./types";
-
-function coerceLeadSector(value: unknown): LeadSector | null {
-  if (typeof value !== "string") return null;
-  return (LEAD_SECTORS as readonly string[]).includes(value) ? (value as LeadSector) : null;
-}
+import type { CrmLead, CrmState } from "./types";
+import { STORAGE_KEY } from "./types";
+import { coerceStoredLeadNiche } from "./lead-niches";
 
 /** Asegura campos nuevos en leads guardados antes de una versión con `sector`. */
 export function migrateCrmState(state: CrmState): CrmState {
@@ -12,7 +8,7 @@ export function migrateCrmState(state: CrmState): CrmState {
     ...state,
     leads: state.leads.map((l) => ({
       ...(l as CrmLead),
-      sector: coerceLeadSector((l as Partial<CrmLead>).sector),
+      sector: coerceStoredLeadNiche((l as Partial<CrmLead>).sector),
     })),
   };
 }

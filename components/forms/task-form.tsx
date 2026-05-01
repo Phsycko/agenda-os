@@ -9,43 +9,78 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useCrm } from "@/components/providers/crm-provider";
-import { PRIORITIES, TASK_STATUSES, type Priority, type TaskStatus } from "@/lib/crm/types";
+import { PRIORITIES, TASK_STATUSES, type CrmTask, type Priority, type TaskStatus } from "@/lib/crm/types";
+
+function taskToFormValues(task: CrmTask | null | undefined) {
+  if (!task) {
+    return {
+      title: "",
+      description: "",
+      status: "PENDIENTE" as TaskStatus,
+      priority: "MEDIA" as Priority,
+      dueDate: "",
+      leadId: "",
+      clientId: "",
+      sellerId: "",
+    };
+  }
+  return {
+    title: task.title,
+    description: task.description ?? "",
+    status: task.status,
+    priority: task.priority,
+    dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
+    leadId: task.leadId ?? "",
+    clientId: task.clientId ?? "",
+    sellerId: task.sellerId ?? "",
+  };
+}
 
 export function TaskForm({
   onSaved,
   onClose,
   initialLeadId,
+  task,
+  skipGlobalModal,
 }: {
   onSaved?: () => void;
   onClose?: () => void;
   initialLeadId?: string | null;
+  /** Si viene definida, el formulario edita esa tarea en lugar de crear una nueva */
+  task?: CrmTask | null;
+  /** No cerrar el modal global del topbar al guardar (p. ej. edición desde /tareas) */
+  skipGlobalModal?: boolean;
 }) {
-  const { createTask, state, setModalOpen } = useCrm();
+  const { createTask, updateTask, state, setModalOpen } = useCrm();
+  const isEdit = Boolean(task);
+
   const form = useForm({
     resolver: zodResolver(taskSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      status: "PENDIENTE",
-      priority: "MEDIA",
-      dueDate: "",
-      leadId: "",
-      clientId: "",
-      sellerId: "",
-    },
+    defaultValues: taskToFormValues(task),
   });
 
   useEffect(() => {
-    if (!initialLeadId) return;
+    if (task) form.reset(taskToFormValues(task));
+    // Solo al abrir otra tarea (por id), no en cada render del objeto `task`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task?.id]);
+
+  useEffect(() => {
+    if (!initialLeadId || isEdit) return;
     form.setValue("leadId", initialLeadId);
-    form.setValue("title", "Seguimiento de lead");
-  }, [initialLeadId, form]);
+    if (!form.getValues("title")) form.setValue("title", "Seguimiento de lead");
+  }, [initialLeadId, isEdit, form]);
+
+  const close = () => {
+    onClose?.();
+    if (!skipGlobalModal) setModalOpen(null);
+  };
 
   return (
     <form
       className="grid gap-3"
       onSubmit={form.handleSubmit((v) => {
-        createTask({
+        const payload = {
           title: v.title,
           description: v.description || null,
           status: (v.status as TaskStatus) || "PENDIENTE",
@@ -54,17 +89,21 @@ export function TaskForm({
           leadId: v.leadId || null,
           clientId: v.clientId || null,
           sellerId: v.sellerId || null,
-        });
-        form.reset();
+        };
+        if (task) {
+          updateTask(task.id, payload);
+        } else {
+          createTask(payload);
+          form.reset(taskToFormValues(undefined));
+        }
         onSaved?.();
-        onClose?.();
-        setModalOpen(null);
+        close();
       })}
     >
       <Input placeholder="Título" {...form.register("title")} />
       <Textarea placeholder="Descripción" {...form.register("description")} />
       <div className="grid grid-cols-2 gap-3">
-        <Select defaultValue="PENDIENTE" onValueChange={(v) => form.setValue("status", v ?? "PENDIENTE")}>
+        <Select value={form.watch("status")} onValueChange={(v) => form.setValue("status", (v ?? "PENDIENTE") as TaskStatus)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -76,7 +115,7 @@ export function TaskForm({
             ))}
           </SelectContent>
         </Select>
-        <Select defaultValue="MEDIA" onValueChange={(v) => form.setValue("priority", v ?? "MEDIA")}>
+        <Select value={form.watch("priority")} onValueChange={(v) => form.setValue("priority", (v ?? "MEDIA") as Priority)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -89,8 +128,14 @@ export function TaskForm({
           </SelectContent>
         </Select>
       </div>
-      <Input type="date" {...form.register("dueDate")} />
-      <Select defaultValue="" onValueChange={(v) => form.setValue("sellerId", v === "__none" ? "" : (v ?? ""))}>
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Fecha límite</p>
+        <Input type="date" {...form.register("dueDate")} />
+      </div>
+      <Select
+        value={form.watch("sellerId") ? form.watch("sellerId") : "__none"}
+        onValueChange={(v) => form.setValue("sellerId", v === "__none" ? "" : (v ?? ""))}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Vendedor" />
         </SelectTrigger>
@@ -103,7 +148,10 @@ export function TaskForm({
           ))}
         </SelectContent>
       </Select>
-      <Select defaultValue="" onValueChange={(v) => form.setValue("leadId", v === "__none" ? "" : (v ?? ""))}>
+      <Select
+        value={form.watch("leadId") ? form.watch("leadId") : "__none"}
+        onValueChange={(v) => form.setValue("leadId", v === "__none" ? "" : (v ?? ""))}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Relacionar lead" />
         </SelectTrigger>
@@ -116,7 +164,10 @@ export function TaskForm({
           ))}
         </SelectContent>
       </Select>
-      <Select defaultValue="" onValueChange={(v) => form.setValue("clientId", v === "__none" ? "" : (v ?? ""))}>
+      <Select
+        value={form.watch("clientId") ? form.watch("clientId") : "__none"}
+        onValueChange={(v) => form.setValue("clientId", v === "__none" ? "" : (v ?? ""))}
+      >
         <SelectTrigger>
           <SelectValue placeholder="Relacionar cliente" />
         </SelectTrigger>
@@ -130,7 +181,7 @@ export function TaskForm({
         </SelectContent>
       </Select>
       <Button type="submit" className="bg-primary text-black">
-        Guardar tarea
+        {isEdit ? "Guardar cambios" : "Guardar tarea"}
       </Button>
     </form>
   );
